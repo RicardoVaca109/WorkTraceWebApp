@@ -4,6 +4,7 @@ namespace WorkTrace.WebApp.Models.Dtos.Users
 {
     public class UserInformationResponse
     {
+        public string Id { get; set; }
         public string FullName { get; set; }
         public string DocumentNumber { get; set; }
         public string PhoneNumber { get; set; }
