@@ -3,15 +3,16 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using WorkTrace.WebApp.Models.Dtos.Users;
 using WorkTrace.WebApp.Services.ApiServices;
+using WorkTrace.WebApp.Services.Interfaces;
 using WorkTrace.WebApp.Shared;
 
 namespace WorkTrace.WebApp.Controllers.Account
 {
     public class AccountController : Controller
     {
-        private readonly AuthApiService _authApiService;
+        private readonly IAuthApiService _authApiService;
 
-        public AccountController(AuthApiService authApiService)
+        public AccountController(IAuthApiService authApiService)
         {
             _authApiService = authApiService;
         }

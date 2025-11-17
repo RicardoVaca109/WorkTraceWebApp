@@ -1,5 +1,4 @@
 ﻿using WorkTrace.WebApp;
-using WorkTrace.WebApp.Configurations;
 
 var builder = WebApplication.CreateBuilder(args);
 
