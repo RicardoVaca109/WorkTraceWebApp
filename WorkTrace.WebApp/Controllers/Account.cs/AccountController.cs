@@ -57,7 +57,6 @@ namespace WorkTrace.WebApp.Controllers.Account
                 return View();
             }
 
-            // Guardar en sesión
             HttpContext.Session.SetString("JWToken", loginResponse.Token);
             HttpContext.Session.SetString("UserRole", userRole.ToString());
             HttpContext.Session.SetString("UserName",

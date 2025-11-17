@@ -1,10 +1,11 @@
 ﻿using System.Text;
 using System.Text.Json;
 using WorkTrace.WebApp.Models.Dtos.Users;
+using WorkTrace.WebApp.Services.Interfaces;
 
 namespace WorkTrace.WebApp.Services.ApiServices
 {
-    public class AuthApiService
+    public class AuthApiService : IAuthApiService
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _configuration;
