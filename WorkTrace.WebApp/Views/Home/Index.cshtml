@@ -1,8 +1,178 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Panel Principal";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    body {
+        font-family: 'Inter', 'Roboto', sans-serif;
+        background-color: #f8f9fa;
+    }
+
+    .dashboard-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        height: 100%;
+        min-height: 240px;
+    }
+
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+    }
+
+    .card-icon {
+        width: 64px;
+        height: 64px;
+        margin-bottom: 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+    }
+
+    .card-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        color: #1f2937;
+    }
+
+    .card-button {
+        padding: 0.75rem 1.75rem;
+        border-radius: 8px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+        font-size: 0.95rem;
+        margin-top: auto;
+    }
+
+    .card-button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-blue { background-color: #3b82f6; color: white; }
+    .btn-blue:hover { background-color: #2563eb; color: white; }
+
+    .btn-green { background-color: #10b981; color: white; }
+    .btn-green:hover { background-color: #059669; color: white; }
+
+    .btn-lightblue { background-color: #06b6d4; color: white; }
+    .btn-lightblue:hover { background-color: #0891b2; color: white; }
+
+    .btn-yellow { background-color: #f59e0b; color: white; }
+    .btn-yellow:hover { background-color: #d97706; color: white; }
+
+    .btn-red { background-color: #ef4444; color: white; }
+    .btn-red:hover { background-color: #dc2626; color: white; }
+
+    .btn-gray { background-color: #6b7280; color: white; }
+    .btn-gray:hover { background-color: #4b5563; color: white; }
+
+    .icon-blue { background-color: #dbeafe; color: #3b82f6; }
+    .icon-green { background-color: #d1fae5; color: #10b981; }
+    .icon-lightblue { background-color: #cffafe; color: #06b6d4; }
+    .icon-yellow { background-color: #fef3c7; color: #f59e0b; }
+    .icon-red { background-color: #fee2e2; color: #ef4444; }
+    .icon-gray { background-color: #e5e7eb; color: #6b7280; }
+</style>
+
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-4xl font-bold text-center mb-10 text-gray-800">Panel Principal</h1>
+
+    <div class="row g-4 mb-10">
+        <!-- Row 1 - Column 1: Empleado Nómina -->
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="dashboard-card">
+                <div class="card-icon icon-blue">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664z" />
+                    </svg>
+                </div>
+                <h2 class="card-title">Empleado Nómina</h2>
+                <a asp-controller="User" asp-action="Index" class="card-button btn-blue">Ingresar</a>
+            </div>
+        </div>
+
+        <!-- Row 1 - Column 2: Clientes -->
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="dashboard-card">
+                <div class="card-icon icon-green">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0" />
+                        <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1" />
+                    </svg>
+                </div>
+                <h2 class="card-title">Clientes</h2>
+                <a asp-controller="Home" asp-action="Clientes" class="card-button btn-green">Ingresar</a>
+            </div>
+        </div>
+
+        <!-- Row 1 - Column 3: Estadística -->
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="dashboard-card">
+                <div class="card-icon icon-lightblue">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M4 11H2v3h2zm5-4H7v7h2zm5-5v12h-2V2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1z" />
+                    </svg>
+                </div>
+                <h2 class="card-title">Estadística</h2>
+                <a asp-controller="Home" asp-action="Estadistica" class="card-button btn-lightblue">Ver Gráficos</a>
+            </div>
+        </div>
+
+        <!-- Row 2 - Column 1: Calendario Actividades -->
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="dashboard-card">
+                <div class="card-icon icon-yellow">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
+                    </svg>
+                </div>
+                <h2 class="card-title">Calendario Actividades</h2>
+                <a asp-controller="Home" asp-action="CalendarioActividades" class="card-button btn-yellow">Abrir</a>
+            </div>
+        </div>
+
+        <!-- Row 2 - Column 2: Seguimiento -->
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="dashboard-card">
+                <div class="card-icon icon-red">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M9.5 0a.5.5 0 0 1 .5.5.5.5 0 0 0 .5.5.5.5 0 0 1 .5.5V2a.5.5 0 0 1-.5.5h-5A.5.5 0 0 1 5 2v-.5a.5.5 0 0 1 .5-.5.5.5 0 0 0 .5-.5.5.5 0 0 1 .5-.5z" />
+                        <path d="M3 2.5a.5.5 0 0 1 .5-.5H4a.5.5 0 0 0 0-1h-.5A1.5 1.5 0 0 0 2 2.5v12A1.5 1.5 0 0 0 3.5 16h9a1.5 1.5 0 0 0 1.5-1.5v-12A1.5 1.5 0 0 0 12.5 1H12a.5.5 0 0 0 0 1h.5a.5.5 0 0 1 .5.5v12a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5z" />
+                        <path d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0" />
+                    </svg>
+                </div>
+                <h2 class="card-title">Seguimiento</h2>
+                <a asp-controller="Home" asp-action="Seguimiento" class="card-button btn-red">Ver Detalles</a>
+            </div>
+        </div>
+
+        <!-- Row 2 - Column 3: Servicios -->
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="dashboard-card">
+                <div class="card-icon icon-gray">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492M5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0" />
+                        <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115z" />
+                    </svg>
+                </div>
+                <h2 class="card-title">Servicios</h2>
+                <a asp-controller="Home" asp-action="Servicios" class="card-button btn-gray">Gestionar</a>
+            </div>
+        </div>
+    </div>
 </div>
