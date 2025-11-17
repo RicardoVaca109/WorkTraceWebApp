@@ -1,4 +1,5 @@
-using WorkTrace.WebApp.Services.ApiServices;
+ï»¿using WorkTrace.WebApp;
+using WorkTrace.WebApp.Configurations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,13 +8,13 @@ builder.Services.AddDistributedMemoryCache();
 
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(30); // Duración de la sesión
+    options.IdleTimeout = TimeSpan.FromMinutes(30); // DuraciÃ³n de la sesiÃ³n
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
 
 builder.Services.AddHttpClient();
-builder.Services.AddScoped<AuthApiService>();
+builder.Services.AddWebAppServices();
 
 var app = builder.Build();
 
