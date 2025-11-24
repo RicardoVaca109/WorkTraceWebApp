@@ -8,5 +8,5 @@ public interface IUserApiService
     Task<UserInformationResponse?> GetByIdAsync(string id);
     Task<UserInformationResponse?> CreateAsync(CreateUserRequest request);
     Task<UserInformationResponse?> UpdateAsync(string id, UpdateUserRequest request);
-    Task<bool> DeactivateAsync(string id);
+    Task<(bool, string?)> DeactivateAsync(string id);
 }

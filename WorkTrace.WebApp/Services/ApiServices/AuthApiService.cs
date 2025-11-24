@@ -7,25 +7,16 @@ namespace WorkTrace.WebApp.Services.ApiServices
 {
     public class AuthApiService : IAuthApiService
     {
-        private readonly IHttpClientFactory _httpClientFactory;
-        private readonly IConfiguration _configuration;
+        private readonly HttpClient _client;
 
-        public AuthApiService(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+        public AuthApiService(HttpClient client)
         {
-            _httpClientFactory = httpClientFactory;
-            _configuration = configuration;
+            _client = client;
         }
 
         public async Task<LoginResponse?> LoginAsync(LoginRequest request)
         {
-            var client = _httpClientFactory.CreateClient();
-            var baseUrl = _configuration.GetValue<string>("APIConfigurations:ApiUrl");
-            client.BaseAddress = new Uri(baseUrl);
-
-            var json = JsonSerializer.Serialize(request);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-            var response = await client.PostAsync("User/Login", content);
+            var response = await _client.PostAsJsonAsync("User/Login", request);
 
             if (!response.IsSuccessStatusCode)
                 return null;

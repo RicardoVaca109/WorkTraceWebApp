@@ -1,8 +1,7 @@
-@model List<WorkTrace.WebApp.Models.Dtos.Users.UserInformationResponse>
-@using WorkTrace.WebApp.Shared
+@model List<WorkTrace.WebApp.Models.Dtos.Clients.ClientInformationResponse>
 
 @{
-    ViewData["Title"] = "Administración de Empleados";
+    ViewData["Title"] = "Administración de Clientes";
 }
 
 <!-- Notification Placeholders -->
@@ -11,10 +10,10 @@
 <div class="container-fluid py-4">
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h4 class="mb-0">Administración de Empleados</h4>
+            <h4 class="mb-0">@ViewData["Title"]</h4>
             <div>
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
-                    <i class="fas fa-plus me-2"></i>Crear Nuevo Empleado
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createClientModal">
+                    <i class="fas fa-plus me-2"></i>Crear Nuevo Cliente
                 </button>
                 <a asp-action="Index" asp-controller="Home" class="btn btn-secondary">
                     <i class="fas fa-arrow-left me-2"></i>Volver al Panel Principal
@@ -30,44 +29,26 @@
                             <th>Documento</th>
                             <th>Email</th>
                             <th>Teléfono</th>
-                            <th>Rol</th>
-                            <th>Estado</th>
                             <th class="text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         @if (Model != null && Model.Any())
                         {
-                            @foreach (var user in Model)
+                            @foreach (var client in Model)
                             {
                                 <tr>
-                                    <td>@user.FullName</td>
-                                    <td>@user.DocumentNumber</td>
-                                    <td>@user.Email</td>
-                                    <td>@user.PhoneNumber</td>
-                                    <td><span class="badge bg-info">@user.Role</span></td>
-                                    <td>
-                                        @if (user.IsActive)
-                                        {
-                                            <span class="badge bg-success">Activo</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-danger">Inactivo</span>
-                                        }
-                                    </td>
+                                    <td>@client.FullName</td>
+                                    <td>@client.DocumentNumber</td>
+                                    <td>@client.Email</td>
+                                    <td>@client.PhoneNumber</td>
                                     <td class="text-center">
-                                        <button class="btn btn-sm btn-outline-secondary edit-btn" data-id="@user.Id" title="Editar">
+                                        <button class="btn btn-sm btn-outline-secondary edit-btn" data-id="@client.Id" title="Editar">
                                             <i class="fas fa-edit"></i>
                                         </button>
-                                        @if (user.IsActive)
-                                        {
-                                            <form asp-action="Deactivate" asp-route-id="@user.Id" method="post" class="d-inline" onsubmit="return confirm('¿Está seguro de que desea desactivar este usuario?');">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Desactivar">
-                                                    <i class="fas fa-user-slash"></i>
-                                                </button>
-                                            </form>
-                                        }
+                                        <button class="btn btn-sm btn-outline-info history-btn" data-id="@client.Id" title="Ver Historial">
+                                            <i class="fas fa-history"></i>
+                                        </button>
                                     </td>
                                 </tr>
                             }
@@ -75,7 +56,7 @@
                         else
                         {
                             <tr>
-                                <td colspan="7" class="text-center py-4">No hay usuarios para mostrar.</td>
+                                <td colspan="5" class="text-center py-4">No hay clientes para mostrar.</td>
                             </tr>
                         }
                     </tbody>
@@ -85,40 +66,40 @@
     </div>
 </div>
 
-<!-- Create User Modal -->
-<div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
+<!-- Create Client Modal -->
+<div class="modal fade" id="createClientModal" tabindex="-1" aria-labelledby="createClientModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <form id="createUserForm">
+            <form id="createClientForm">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="createUserModalLabel">Crear Nuevo Empleado</h5>
+                    <h5 class="modal-title" id="createClientModalLabel">Crear Nuevo Cliente</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div id="create-user-form-container">
-                        @await Html.PartialAsync("_CreateUserForm", new CreateUserRequest())
+                    <div id="create-client-form-container">
+                        @await Html.PartialAsync("_CreateClientForm", new CreateClientRequest())
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Crear Usuario</button>
+                    <button type="submit" class="btn btn-primary">Crear Cliente</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- Edit User Modal -->
-<div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+<!-- Edit Client Modal -->
+<div class="modal fade" id="editClientModal" tabindex="-1" aria-labelledby="editClientModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <form id="editUserForm">
+            <form id="editClientForm">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="editUserModalLabel">Editar Empleado</h5>
+                    <h5 class="modal-title" id="editClientModalLabel">Editar Cliente</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div id="edit-user-form-container">
+                    <div id="edit-client-form-container">
                         <!-- Content will be loaded via JS -->
                     </div>
                 </div>
@@ -131,10 +112,29 @@
     </div>
 </div>
 
+<!-- Client History Modal -->
+<div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="historyModalLabel">Historial de Servicios</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="history-modal-body-content">
+                    <!-- Content will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-
     <script>
         $(function () {
             function showNotification(message, type) {
@@ -150,15 +150,15 @@
                 });
             }
 
-            $("#createUserForm").on("submit", function(e) {
+            $("#createClientForm").on("submit", function(e) {
                 e.preventDefault();
                 $.ajax({
-                    url: '@Url.Action("Create", "User")',
+                    url: '@Url.Action("Create", "Client")',
                     type: 'POST',
                     data: $(this).serialize(),
                     success: function(response) {
                         if (response.success) {
-                            $('#createUserModal').modal('hide');
+                            $('#createClientModal').modal('hide');
                             showNotification(response.message, 'success');
                         } else {
                             showNotification(response.message, 'error');
@@ -170,16 +170,16 @@
                 });
             });
 
-            $("#editUserForm").on("submit", function(e) {
+            $("#editClientForm").on("submit", function(e) {
                 e.preventDefault();
-                var userId = $(this).data('id');
+                var clientId = $(this).data('id');
                 $.ajax({
-                    url: '@Url.Action("Update", "User")/' + userId,
+                    url: '@Url.Action("Update", "Client")/' + clientId,
                     type: 'POST',
                     data: $(this).serialize(),
                     success: function(response) {
                         if (response.success) {
-                            $('#editUserModal').modal('hide');
+                            $('#editClientModal').modal('hide');
                             showNotification(response.message, 'success');
                         } else {
                             showNotification(response.message, 'error');
@@ -191,34 +191,51 @@
                 });
             });
 
+            // Handle Edit button click
             $('.edit-btn').on('click', function () {
-                var userId = $(this).data('id');
-                var modal = $('#editUserModal');
-                var formContainer = $('#edit-user-form-container');
+                var clientId = $(this).data('id');
+                var modal = $('#editClientModal');
+                var formContainer = $('#edit-client-form-container');
                 
                 formContainer.html('<p class="text-center">Cargando...</p>');
 
-                $.get('@Url.Action("GetUser", "User")?id=' + userId)
+                $.get('@Url.Action("GetById", "Client")?id=' + clientId)
                     .done(function (data) {
                         var updateModel = {
                             FullName: data.fullName,
                             DocumentNumber: data.documentNumber,
                             PhoneNumber: data.phoneNumber,
-                            Email: data.email,
-                            Role: data.role,
-                            IsActive: data.isActive
+                            Email: data.email
                         };
                         
-                        $('#editUserForm').data('id', userId);
+                        $('#editClientForm').data('id', clientId);
 
-                        $.get('@Url.Action("GetEditUserForm", "User")', updateModel, function(response) {
+                        $.get('@Url.Action("GetEditClientForm", "Client")', updateModel, function(response) {
                            formContainer.html(response);
                            $.validator.unobtrusive.parse(formContainer);
                            modal.modal('show');
                          });
                     })
                     .fail(function () {
-                        showNotification('Error al cargar los datos del usuario.', 'error');
+                        showNotification('Error al cargar los datos del cliente.', 'danger');
+                    });
+            });
+
+            // Handle History button click
+            $('.history-btn').on('click', function () {
+                var clientId = $(this).data('id');
+                var modal = $('#historyModal');
+                var modalBody = $('#history-modal-body-content');
+
+                modalBody.html('<p class="text-center">Cargando historial...</p>');
+                modal.modal('show');
+
+                $.get('@Url.Action("GetClientHistory", "Client")?id=' + clientId)
+                    .done(function (response) {
+                        modalBody.html(response);
+                    })
+                    .fail(function () {
+                        modalBody.html('<p class="text-danger text-center">Error al cargar el historial del cliente.</p>');
                     });
             });
         });

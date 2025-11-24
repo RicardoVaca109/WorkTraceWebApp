@@ -1,12 +1,15 @@
-﻿namespace WorkTrace.WebApp.Models.Dtos.Users;
+using WorkTrace.WebApp.Shared;
 
-public class CreateUserRequest
+namespace WorkTrace.WebApp.Models.Dtos.Users
 {
-    public string FullName { get; set; }
-    public string DocumentNumber { get; set; }
-    public string PhoneNumber { get; set; }
-    public string Email { get; set; }
-    public string Password { get; set; }
-    public string Role { get; set; }
-    public bool IsActive { get; set; }
+    public class CreateUserRequest
+    {
+        public string FullName { get; set; } = string.Empty;
+        public string DocumentNumber { get; set; } = string.Empty;
+        public string PhoneNumber { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public UserRoles Role { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
 }

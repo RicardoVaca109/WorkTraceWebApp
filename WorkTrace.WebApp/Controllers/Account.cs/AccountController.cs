@@ -58,7 +58,7 @@ namespace WorkTrace.WebApp.Controllers.Account
                 return View();
             }
 
-            HttpContext.Session.SetString("JWToken", loginResponse.Token);
+            HttpContext.Session.SetString("AuthToken", loginResponse.Token);
             HttpContext.Session.SetString("UserRole", userRole.ToString());
             HttpContext.Session.SetString("UserName",
                 jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "");
