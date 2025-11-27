@@ -1,17 +1,155 @@
 @{
-    ViewData["Title"] = "Seguimiento";
+    ViewData["Title"] = "Seguimiento de Ubicación";
+    double? latitude = ViewBag.Latitude as double?;
+    double? longitude = ViewBag.Longitude as double?;
+    bool hasCoordinates = latitude.HasValue && longitude.HasValue;
 }
 
-<div class="container py-4">
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+<div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>@ViewData["Title"]</h1>
-        <a asp-action="Index" asp-controller="Home" class="btn btn-secondary">
+        <h1 class="h3 mb-0 text-gray-800"><i class="fas fa-map-marked-alt me-2 text-primary"></i>@ViewData["Title"]</h1>
+        <a asp-action="Index" asp-controller="Home" class="btn btn-secondary shadow-sm">
             <i class="fas fa-arrow-left me-2"></i>Volver al Panel Principal
         </a>
     </div>
-    <div class="card">
-        <div class="card-body text-center">
-            <p class="lead">Página de Seguimiento en construcción.</p>
+
+    <div class="card shadow mb-4 border-0">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-white">
+            <h6 class="m-0 font-weight-bold text-primary">Visualización del Mapa</h6>
+            @if (hasCoordinates)
+            {
+                <span class="badge bg-success"><i class="fas fa-check me-1"></i>Coordenadas recibidas</span>
+            }
+            else
+            {
+                <span class="badge bg-warning text-dark"><i class="fas fa-exclamation-triangle me-1"></i>Sin coordenadas</span>
+            }
+        </div>
+        <div class="card-body p-0">
+            @if (hasCoordinates)
+            {
+                <div id="map" style="height: 600px; width: 100%; border-bottom-left-radius: 0.35rem; border-bottom-right-radius: 0.35rem;"></div>
+            }
+            else
+            {
+                <div class="d-flex flex-column justify-content-center align-items-center bg-light" style="height: 600px; border-bottom-left-radius: 0.35rem; border-bottom-right-radius: 0.35rem;">
+                    <div class="text-center text-muted p-5">
+                        <i class="fas fa-map-marked-alt fa-5x mb-3 text-gray-300"></i>
+                        <h4 class="mt-2">No se ha especificado una ubicación</h4>
+                        <p class="mb-0">Por favor, proporcione parámetros de <code>latitude</code> y <code>longitude</code> en la URL.</p>
+                        <p class="small text-muted mt-1">Ejemplo: <code>/Home/Seguimiento?latitude=40.7128&longitude=-74.0060</code></p>
+                    </div>
+                </div>
+            }
         </div>
     </div>
+    
+    @if (hasCoordinates)
+    {
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card shadow-sm border-left-primary py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Latitud</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@latitude</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-arrows-alt-v fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm border-left-success py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Longitud</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@longitude</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-arrows-alt-h fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm border-left-info py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Proveedor de Mapa</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">Esri World Imagery</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-globe-americas fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 </div>
+
+@section Scripts {
+    @if (hasCoordinates)
+    {
+        <!-- Leaflet JS -->
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var lat = @latitude.ToString().Replace(",", ".");
+                var lng = @longitude.ToString().Replace(",", ".");
+
+                // Initialize the map
+                var map = L.map('map').setView([lat, lng], 18); // Increased zoom level for satellite detail
+
+                // Esri World Imagery Layer
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: '&copy; Esri'
+                }).addTo(map);
+
+                // Custom Technician Icon
+                var technicianIcon = new L.Icon({
+                    iconUrl: 'https://cdn-icons-png.flaticon.com/128/3059/3059518.png',
+                    iconSize: [40, 40],
+                    iconAnchor: [20, 40],
+                    popupAnchor: [0, -40]
+                });
+
+                // Add marker
+                var marker = L.marker([lat, lng], { icon: technicianIcon }).addTo(map);
+                
+                // Initial popup content
+                var popupContent = '<div class="text-center"><b>Ubicación Objetivo</b><br><i class="fas fa-spinner fa-spin"></i> Cargando dirección...<br><small class="text-muted">' + lat + ', ' + lng + '</small></div>';
+                marker.bindPopup(popupContent).openPopup();
+
+                // Reverse Geocoding (Nominatim API)
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data && data.display_name) {
+                            var address = data.display_name;
+                            var newContent = '<div class="text-center" style="max-width: 200px;"><b>Ubicación Objetivo</b><br>' + address + '<br><small class="text-muted">' + lat + ', ' + lng + '</small></div>';
+                            marker.setPopupContent(newContent);
+                        } else {
+                             marker.setPopupContent('<div class="text-center"><b>Ubicación Objetivo</b><br>Dirección no disponible<br><small>' + lat + ', ' + lng + '</small></div>');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching address:', error);
+                        marker.setPopupContent('<div class="text-center"><b>Ubicación Objetivo</b><br>Error al obtener dirección<br><small>' + lat + ', ' + lng + '</small></div>');
+                    });
+            });
+        </script>
+    }
+}

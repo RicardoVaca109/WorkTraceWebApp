@@ -220,8 +220,11 @@ public class HomeController : Controller
         }
     }
 
-    public IActionResult Seguimiento()
+    [HttpGet]
+    public IActionResult Seguimiento(double? latitude, double? longitude)
     {
+        ViewBag.Latitude = latitude;
+        ViewBag.Longitude = longitude;
         return View();
     }
 
