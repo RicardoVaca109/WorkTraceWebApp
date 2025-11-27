@@ -1,13 +1,18 @@
-public class AssignmentTrackingResponse
+using WorkTrace.WebApp.Models.Dtos;
+
+namespace WorkTrace.WebApp.Models.Dtos.Assignment
 {
-    public string Id { get; set; }
-    public string Client { get; set; }
-    public string Service { get; set; }
-    public string Address { get; set; }
-    public string? CheckInDate { get; set; }
-    public string? CheckInTime { get; set; }
-    public string? CheckOutDate { get; set; }
-    public string? CheckOutTime { get; set; }
-    public GeoPoint? CurrentLocation { get; set; }
-    public GeoPoint? DestinationLocation { get; set; }
+    public class AssignmentTrackingResponse
+    {
+        public string Id { get; set; }
+        public string Client { get; set; }
+        public string Service { get; set; }
+        public string Address { get; set; }
+        public string? CheckInDate { get; set; }
+        public string? CheckInTime { get; set; }
+        public string? CheckOutDate { get; set; }
+        public string? CheckOutTime { get; set; }
+        public GeoPoint? CurrentLocation { get; set; }
+        public GeoPoint? DestinationLocation { get; set; }
+    }
 }

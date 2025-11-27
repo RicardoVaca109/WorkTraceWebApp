@@ -221,12 +221,17 @@ public class HomeController : Controller
     }
 
     [HttpGet]
-    public IActionResult Seguimiento(double? latitude, double? longitude)
+    public async Task<IActionResult> Seguimiento(double? latitude, double? longitude)
     {
+        var users = await _userApiService.GetAllAsync();
+        var filteredUsers = users?.Where(u => u.Role == Shared.UserRoles.Técnico || u.Role == Shared.UserRoles.Vendedor).ToList() ?? new List<UserInformationResponse>();
+
+        ViewBag.Users = filteredUsers;
         ViewBag.Latitude = latitude;
         ViewBag.Longitude = longitude;
         return View();
     }
+
 
 
     public async Task<IActionResult> Servicios()

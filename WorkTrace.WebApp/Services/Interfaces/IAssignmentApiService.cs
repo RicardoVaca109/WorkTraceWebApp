@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using WorkTrace.WebApp.Models.Dtos;
+using WorkTrace.WebApp.Models.Dtos.Assignment;
 
 namespace WorkTrace.WebApp.Services.Interfaces
 {
@@ -11,5 +12,7 @@ namespace WorkTrace.WebApp.Services.Interfaces
         Task<AssignmentResponse?> CreateAsync(CreateAssignmentRequest request);
         Task<AssignmentResponse?> UpdateAsync(string id, UpdateAssignmentRequest request);
         Task<AssignmentResponse?> GetByIdAsync(string id);
+        Task<List<AssignmentListResponse>?> GetAssignmentsListAsync(string userId);
+        Task<AssignmentTrackingResponse?> GetAssignmentTrackingAsync(string assignmentId);
     }
 }

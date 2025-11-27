@@ -1,12 +1,46 @@
+@using WorkTrace.WebApp.Models.Dtos.Users
 @{
     ViewData["Title"] = "Seguimiento de Ubicación";
-    double? latitude = ViewBag.Latitude as double?;
-    double? longitude = ViewBag.Longitude as double?;
-    bool hasCoordinates = latitude.HasValue && longitude.HasValue;
+    var users = ViewBag.Users as List<UserInformationResponse>;
 }
 
 <!-- Leaflet CSS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<!-- Leaflet Routing Machine CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+<style>
+    #map {
+        height: 600px;
+        width: 100%;
+        border-radius: 0.5rem;
+    }
+    .task-item {
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    .task-item:hover {
+        background-color: #f8f9fa;
+    }
+    .task-item.active {
+        background-color: #e9ecef;
+        border-left: 4px solid #0d6efd;
+        color: #212529 !important; /* Force dark text */
+    }
+    
+    /* Ensure secondary text remains dark/visible in active state */
+    .task-item.active .text-muted,
+    .task-item.active small {
+        color: #6c757d !important;
+    }
+
+    /* Hide default routing container */
+    .leaflet-routing-container {
+        display: none !important;
+    }
+</style>
 
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -16,140 +50,323 @@
         </a>
     </div>
 
-    <div class="card shadow mb-4 border-0">
-        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-white">
-            <h6 class="m-0 font-weight-bold text-primary">Visualización del Mapa</h6>
-            @if (hasCoordinates)
-            {
-                <span class="badge bg-success"><i class="fas fa-check me-1"></i>Coordenadas recibidas</span>
-            }
-            else
-            {
-                <span class="badge bg-warning text-dark"><i class="fas fa-exclamation-triangle me-1"></i>Sin coordenadas</span>
-            }
-        </div>
-        <div class="card-body p-0">
-            @if (hasCoordinates)
-            {
-                <div id="map" style="height: 600px; width: 100%; border-bottom-left-radius: 0.35rem; border-bottom-right-radius: 0.35rem;"></div>
-            }
-            else
-            {
-                <div class="d-flex flex-column justify-content-center align-items-center bg-light" style="height: 600px; border-bottom-left-radius: 0.35rem; border-bottom-right-radius: 0.35rem;">
-                    <div class="text-center text-muted p-5">
-                        <i class="fas fa-map-marked-alt fa-5x mb-3 text-gray-300"></i>
-                        <h4 class="mt-2">No se ha especificado una ubicación</h4>
-                        <p class="mb-0">Por favor, proporcione parámetros de <code>latitude</code> y <code>longitude</code> en la URL.</p>
-                        <p class="small text-muted mt-1">Ejemplo: <code>/Home/Seguimiento?latitude=40.7128&longitude=-74.0060</code></p>
+    <div class="row">
+        <!-- Sidebar: Controls and Task List -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-white">
+                    <h6 class="m-0 font-weight-bold text-primary">Selección de Usuario</h6>
+                </div>
+                <div class="card-body">
+                    <div class="form-group mb-3">
+                        <label for="userSelect" class="form-label">Empleado (Técnico/Vendedor)</label>
+                        <select id="userSelect" class="form-select" style="width: 100%;">
+                            <option value="">Seleccione un usuario...</option>
+                            @if (users != null)
+                            {
+                                foreach (var user in users)
+                                {
+                                    <option value="@user.Id">@user.FullName (@user.Role)</option>
+                                }
+                            }
+                        </select>
                     </div>
                 </div>
-            }
+            </div>
+
+            <div class="card shadow" style="height: 500px;">
+                <div class="card-header py-3 bg-white d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Asignaciones</h6>
+                    <span id="taskCount" class="badge bg-secondary rounded-pill">0</span>
+                </div>
+                <div class="card-body p-0" style="overflow-y: auto;">
+                    <div id="taskList" class="list-group list-group-flush">
+                        <div class="text-center p-4 text-muted">
+                            <i class="fas fa-tasks fa-2x mb-2"></i>
+                            <p>Seleccione un usuario para ver sus tareas.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Area -->
+        <div class="col-md-8 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3 bg-white d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Mapa en Tiempo Real</h6>
+                    <div id="trackingStatus" class="small"></div>
+                </div>
+                <div class="card-body p-0 position-relative">
+                    <div id="map"></div>
+                    <!-- Custom Route Badge -->
+                    <div id="routeSummary" class="position-absolute top-0 end-0 m-3 p-3 bg-white rounded shadow-sm d-none border" style="z-index: 1000; min-width: 200px;">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="text-center pe-3 border-end">
+                                <i class="fas fa-road text-primary fa-lg mb-1"></i>
+                                <div id="routeDist" class="fw-bold h5 mb-0">0 km</div>
+                                <small class="text-muted">Distancia</small>
+                            </div>
+                            <div class="text-center ps-3">
+                                <i class="fas fa-clock text-warning fa-lg mb-1"></i>
+                                <div id="routeTime" class="fw-bold h5 mb-0">0 min</div>
+                                <small class="text-muted">Tiempo Est.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    
-    @if (hasCoordinates)
-    {
-        <div class="row">
-            <div class="col-md-4">
-                <div class="card shadow-sm border-left-primary py-2">
-                    <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Latitud</div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800">@latitude</div>
-                            </div>
-                            <div class="col-auto">
-                                <i class="fas fa-arrows-alt-v fa-2x text-gray-300"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card shadow-sm border-left-success py-2">
-                    <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Longitud</div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800">@longitude</div>
-                            </div>
-                            <div class="col-auto">
-                                <i class="fas fa-arrows-alt-h fa-2x text-gray-300"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card shadow-sm border-left-info py-2">
-                    <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Proveedor de Mapa</div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800">Esri World Imagery</div>
-                            </div>
-                            <div class="col-auto">
-                                <i class="fas fa-globe-americas fa-2x text-gray-300"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
 </div>
 
 @section Scripts {
-    @if (hasCoordinates)
-    {
-        <!-- Leaflet JS -->
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Leaflet Routing Machine JS -->
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                var lat = @latitude.ToString().Replace(",", ".");
-                var lng = @longitude.ToString().Replace(",", ".");
+    <script>
+        $(document).ready(function () {
+            // Initialize Select2
+            $('#userSelect').select2({
+                placeholder: "Seleccione un usuario...",
+                allowClear: true,
+                theme: "bootstrap-5" 
+            });
 
-                // Initialize the map
-                var map = L.map('map').setView([lat, lng], 18); // Increased zoom level for satellite detail
+            // Initialize Map
+            var map = L.map('map').setView([-0.1807, -78.4678], 12); 
+            
+            // Esri World Imagery Layer
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '&copy; Esri'
+            }).addTo(map);
 
-                // Esri World Imagery Layer
-                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                    attribution: '&copy; Esri'
-                }).addTo(map);
+            // Icons
+            var technicianIcon = L.icon({
+                iconUrl: 'https://cdn-icons-png.flaticon.com/128/3059/3059518.png',
+                iconSize: [40, 40],
+                iconAnchor: [20, 40],
+                popupAnchor: [0, -40]
+            });
 
-                // Custom Technician Icon
-                var technicianIcon = new L.Icon({
-                    iconUrl: 'https://cdn-icons-png.flaticon.com/128/3059/3059518.png',
-                    iconSize: [40, 40],
-                    iconAnchor: [20, 40],
-                    popupAnchor: [0, -40]
-                });
+            var destinationIcon = L.icon({
+                iconUrl: 'https://cdn-icons-png.flaticon.com/128/1255/1255396.png', 
+                iconSize: [40, 40],
+                iconAnchor: [20, 40],
+                popupAnchor: [0, -40]
+            });
 
-                // Add marker
-                var marker = L.marker([lat, lng], { icon: technicianIcon }).addTo(map);
+            var markers = {
+                current: null,
+                destination: null
+            };
+            
+            var routingControl = null;
+
+            // User Select Change
+            $('#userSelect').on('select2:select', function (e) {
+                var userId = e.params.data.id;
+                loadTasks(userId);
+            });
+
+            $('#userSelect').on('select2:unselect', function (e) {
+                $('#taskList').html('<div class="text-center p-4 text-muted"><i class="fas fa-tasks fa-2x mb-2"></i><p>Seleccione un usuario para ver sus tareas.</p></div>');
+                $('#taskCount').text('0');
+                clearMap();
+            });
+
+            function loadTasks(userId) {
+                $('#taskList').html('<div class="text-center p-4"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Cargando tareas...</p></div>');
                 
-                // Initial popup content
-                var popupContent = '<div class="text-center"><b>Ubicación Objetivo</b><br><i class="fas fa-spinner fa-spin"></i> Cargando dirección...<br><small class="text-muted">' + lat + ', ' + lng + '</small></div>';
-                marker.bindPopup(popupContent).openPopup();
-
-                // Reverse Geocoding (Nominatim API)
-                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data && data.display_name) {
-                            var address = data.display_name;
-                            var newContent = '<div class="text-center" style="max-width: 200px;"><b>Ubicación Objetivo</b><br>' + address + '<br><small class="text-muted">' + lat + ', ' + lng + '</small></div>';
-                            marker.setPopupContent(newContent);
+                $.get('/Assignment/GetAssignmentsList/by-user/' + userId)
+                    .done(function (data) {
+                        var listHtml = '';
+                        if (data && data.length > 0) {
+                            data.forEach(function (task) {
+                                listHtml += `
+                                    <a href="#" class="list-group-item list-group-item-action task-item" data-id="${task.id}">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1 text-primary fw-bold">${task.service}</h6>
+                                            <small>${task.assignedDate}</small>
+                                        </div>
+                                        <p class="mb-1 text-truncate"><i class="fas fa-user-tie me-1"></i>${task.client}</p>
+                                        <small class="text-muted"><i class="fas fa-clock me-1"></i>${task.assignedTime}</small>
+                                    </a>
+                                `;
+                            });
+                            $('#taskList').html(listHtml);
+                            $('#taskCount').text(data.length);
                         } else {
-                             marker.setPopupContent('<div class="text-center"><b>Ubicación Objetivo</b><br>Dirección no disponible<br><small>' + lat + ', ' + lng + '</small></div>');
+                            $('#taskList').html('<div class="text-center p-4 text-muted"><p>No se encontraron asignaciones para este usuario.</p></div>');
+                            $('#taskCount').text('0');
                         }
                     })
-                    .catch(error => {
-                        console.error('Error fetching address:', error);
-                        marker.setPopupContent('<div class="text-center"><b>Ubicación Objetivo</b><br>Error al obtener dirección<br><small>' + lat + ', ' + lng + '</small></div>');
+                    .fail(function () {
+                        $('#taskList').html('<div class="text-center p-4 text-danger"><p>Error al cargar las tareas.</p></div>');
+                        $('#taskCount').text('0');
                     });
+            }
+
+            // Task Click
+            $(document).on('click', '.task-item', function (e) {
+                e.preventDefault();
+                $('.task-item').removeClass('active');
+                $(this).addClass('active');
+                
+                var assignmentId = $(this).data('id');
+                loadTracking(assignmentId);
             });
-        </script>
-    }
+
+            function loadTracking(assignmentId) {
+                $('#trackingStatus').html('<span class="text-warning"><i class="fas fa-spinner fa-spin me-1"></i>Actualizando ubicación...</span>');
+                
+                $.get('/Assignment/GetAssignmentTracking/tracking/' + assignmentId)
+                    .done(function (data) {
+                        updateMap(data);
+                        $('#trackingStatus').html('<span class="text-success"><i class="fas fa-check-circle me-1"></i>Datos actualizados</span>');
+                    })
+                    .fail(function () {
+                        $('#trackingStatus').html('<span class="text-danger"><i class="fas fa-exclamation-circle me-1"></i>Error de conexión</span>');
+                    });
+            }
+
+            function updateMap(data) {
+                clearMap();
+                var bounds = [];
+                var curLat, curLng, destLat, destLng;
+
+                // Destination Marker
+                if (data.destinationLocation) {
+                    destLat = data.destinationLocation.latitude;
+                    destLng = data.destinationLocation.longitude;
+                    
+                    markers.destination = L.marker([destLat, destLng], { icon: destinationIcon })
+                        .addTo(map)
+                        .bindPopup(`<b>Destino</b><br>${data.client}<br>${data.address}<br>Hora: ${data.assignedTime || 'N/A'}`)
+                        .openPopup();
+                    
+                    bounds.push([destLat, destLng]);
+                }
+
+                // Current Location Marker (Technician)
+                if (data.currentLocation) {
+                    curLat = data.currentLocation.latitude;
+                    curLng = data.currentLocation.longitude;
+                    
+                    markers.current = L.marker([curLat, curLng], { icon: technicianIcon })
+                        .addTo(map);
+
+                    var popupContent = `<b>Técnico</b><br><i class="fas fa-spinner fa-spin"></i> Cargando dirección...<br><small>Ultima actualización: ${new Date(data.currentLocation.updatedAt).toLocaleTimeString()}</small>`;
+                    markers.current.bindPopup(popupContent);
+
+                    // Reverse Geocoding for Technician
+                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${curLat}&lon=${curLng}`)
+                        .then(response => response.json())
+                        .then(addressData => {
+                            if (addressData && addressData.display_name) {
+                                var address = addressData.display_name;
+                                var newContent = `<b>Técnico</b><br>${address}<br><small>Ultima actualización: ${new Date(data.currentLocation.updatedAt).toLocaleTimeString()}</small>`;
+                                markers.current.setPopupContent(newContent);
+                            } else {
+                                 var newContent = `<b>Técnico</b><br>Dirección no disponible<br><small>Ultima actualización: ${new Date(data.currentLocation.updatedAt).toLocaleTimeString()}</small>`;
+                                 markers.current.setPopupContent(newContent);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching technician address:', error);
+                             var newContent = `<b>Técnico</b><br>Error al obtener dirección<br><small>Ultima actualización: ${new Date(data.currentLocation.updatedAt).toLocaleTimeString()}</small>`;
+                             markers.current.setPopupContent(newContent);
+                        });
+                    
+                    bounds.push([curLat, curLng]);
+                }
+
+                // Fit bounds
+                if (bounds.length > 0) {
+                    map.fitBounds(bounds, { padding: [50, 50] });
+                } else {
+                    map.setView([-0.1807, -78.4678], 12); 
+                    alert('No hay coordenadas disponibles para esta asignación.');
+                }
+
+                // Calculate Route & Proximity
+                if (data.destinationLocation && data.currentLocation) {
+                    var technicianLatLng = L.latLng(curLat, curLng);
+                    var destinationLatLng = L.latLng(destLat, destLng);
+
+                    // Proximity Check (< 100m)
+                    if (map.distance(technicianLatLng, destinationLatLng) < 100) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'En Sitio',
+                            text: '📍 El técnico ha llegado al punto de servicio',
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            showCloseButton: true,
+                            timer: 0,
+                            timerProgressBar: false
+                        });
+                    }
+
+                    routingControl = L.Routing.control({
+                        waypoints: [
+                            technicianLatLng,
+                            destinationLatLng
+                        ],
+                        router: L.Routing.osrmv1({
+                            serviceUrl: 'https://router.project-osrm.org/route/v1'
+                        }),
+                        lineOptions: {
+                            styles: [{color: '#0d6efd', opacity: 0.7, weight: 5}]
+                        },
+                        createMarker: function() { return null; }, // Suppress default markers
+                        addWaypoints: false,
+                        draggableWaypoints: false,
+                        fitSelectedRoutes: false, // We control bounds manually
+                        show: false // Attempt to hide UI via option
+                    }).on('routesfound', function(e) {
+                        var routes = e.routes;
+                        var summary = routes[0].summary;
+                        
+                        // Format values
+                        var dist = summary.totalDistance > 1000 
+                            ? (summary.totalDistance / 1000).toFixed(1) + ' km' 
+                            : Math.round(summary.totalDistance) + ' m';
+                        
+                        var time = Math.round(summary.totalTime / 60) + ' min';
+                        if (summary.totalTime > 3600) {
+                            var h = Math.floor(summary.totalTime / 3600);
+                            var m = Math.round((summary.totalTime % 3600) / 60);
+                            time = `${h} h ${m} min`;
+                        }
+                        
+                        $('#routeDist').text(dist);
+                        $('#routeTime').text(time);
+                        $('#routeSummary').removeClass('d-none');
+                    }).addTo(map);
+                }
+            }
+
+            function clearMap() {
+                if (markers.current) {
+                    map.removeLayer(markers.current);
+                    markers.current = null;
+                }
+                if (markers.destination) {
+                    map.removeLayer(markers.destination);
+                    markers.destination = null;
+                }
+                if (routingControl) {
+                    map.removeControl(routingControl);
+                    routingControl = null;
+                }
+                $('#routeSummary').addClass('d-none');
+            }
+        });
+    </script>
 }

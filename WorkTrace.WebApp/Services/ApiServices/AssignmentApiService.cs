@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using WorkTrace.WebApp.Models.Dtos;
+using WorkTrace.WebApp.Models.Dtos.Assignment;
 using WorkTrace.WebApp.Services.Interfaces;
 
 namespace WorkTrace.WebApp.Services.ApiServices
@@ -42,6 +43,18 @@ namespace WorkTrace.WebApp.Services.ApiServices
         {
             var response = await _client.GetAsync($"{_controller}/GetById?id={id}");
             return await ReadResponse<AssignmentResponse>(response);
+        }
+
+        public async Task<List<AssignmentListResponse>?> GetAssignmentsListAsync(string userId)
+        {
+            var response = await _client.GetAsync($"{_controller}/GetAssignmentsList/by-user/{userId}");
+            return await ReadResponse<List<AssignmentListResponse>>(response);
+        }
+
+        public async Task<AssignmentTrackingResponse?> GetAssignmentTrackingAsync(string assignmentId)
+        {
+            var response = await _client.GetAsync($"{_controller}/GetAssignmentTracking/tracking/{assignmentId}");
+            return await ReadResponse<AssignmentTrackingResponse>(response);
         }
     }
 }
