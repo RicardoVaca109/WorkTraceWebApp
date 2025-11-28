@@ -143,9 +143,17 @@
             // Initialize Map
             var map = L.map('map').setView([-0.1807, -78.4678], 12);
 
-            // Esri World Imagery Layer
-            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                attribution: '&copy; Esri'
+            // Google Hybrid Layer (Satellite + Detailed Streets/Labels)
+            L.tileLayer('http://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+                maxZoom: 20,
+                subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+                attribution: '&copy; Google'
+            }).addTo(map);
+
+            // Esri World Boundaries and Places Overlay Layer (for street names, labels, and points of interest)
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '&copy; Google, &copy; Esri, DeLorme, HERE, TomTom',
+                zIndex: 2
             }).addTo(map);
 
             // Icons
