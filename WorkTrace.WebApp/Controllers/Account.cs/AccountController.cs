@@ -2,7 +2,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using WorkTrace.WebApp.Models.Dtos.Users;
-using WorkTrace.WebApp.Services.ApiServices;
 using WorkTrace.WebApp.Services.Interfaces;
 using WorkTrace.WebApp.Shared;
 

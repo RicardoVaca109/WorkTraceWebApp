@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Threading.Tasks;
 using WorkTrace.WebApp.Models.Dtos;
 using WorkTrace.WebApp.Models.Dtos.Assignment;
 using WorkTrace.WebApp.Services.Interfaces;

@@ -1,5 +1,3 @@
-using WorkTrace.WebApp.Models.Dtos;
-
 namespace WorkTrace.WebApp.Models.Dtos.Assignment
 {
     public class AssignmentTrackingResponse

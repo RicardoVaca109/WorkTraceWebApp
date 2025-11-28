@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace WorkTrace.WebApp.Models.Dtos.Service
 {
     public class UpdateServiceRequest

@@ -1,5 +1,4 @@
-﻿using System.Text;
-using System.Text.Json;
+﻿using System.Text.Json;
 using WorkTrace.WebApp.Models.Dtos.Users;
 using WorkTrace.WebApp.Services.Interfaces;
 

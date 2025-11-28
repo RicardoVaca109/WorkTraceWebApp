@@ -1,5 +1,4 @@
-﻿using System.Net.Http.Json;
-using WorkTrace.WebApp.Models.Dtos.Users;
+﻿using WorkTrace.WebApp.Models.Dtos.Users;
 using WorkTrace.WebApp.Services.Interfaces;
 
 namespace WorkTrace.WebApp.Services.ApiServices;

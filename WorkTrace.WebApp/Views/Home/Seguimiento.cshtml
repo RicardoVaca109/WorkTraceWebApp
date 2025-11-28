@@ -17,24 +17,27 @@
         width: 100%;
         border-radius: 0.5rem;
     }
+
     .task-item {
         cursor: pointer;
         transition: background-color 0.2s;
     }
-    .task-item:hover {
-        background-color: #f8f9fa;
-    }
-    .task-item.active {
-        background-color: #e9ecef;
-        border-left: 4px solid #0d6efd;
-        color: #212529 !important; /* Force dark text */
-    }
-    
-    /* Ensure secondary text remains dark/visible in active state */
-    .task-item.active .text-muted,
-    .task-item.active small {
-        color: #6c757d !important;
-    }
+
+        .task-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .task-item.active {
+            background-color: #e9ecef;
+            border-left: 4px solid #0d6efd;
+            color: #212529 !important; /* Force dark text */
+        }
+
+            /* Ensure secondary text remains dark/visible in active state */
+            .task-item.active .text-muted,
+            .task-item.active small {
+                color: #6c757d !important;
+            }
 
     /* Hide default routing container */
     .leaflet-routing-container {
@@ -134,12 +137,12 @@
             $('#userSelect').select2({
                 placeholder: "Seleccione un usuario...",
                 allowClear: true,
-                theme: "bootstrap-5" 
+                theme: "bootstrap-5"
             });
 
             // Initialize Map
-            var map = L.map('map').setView([-0.1807, -78.4678], 12); 
-            
+            var map = L.map('map').setView([-0.1807, -78.4678], 12);
+
             // Esri World Imagery Layer
             L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                 attribution: '&copy; Esri'
@@ -154,7 +157,7 @@
             });
 
             var destinationIcon = L.icon({
-                iconUrl: 'https://cdn-icons-png.flaticon.com/128/1255/1255396.png', 
+                iconUrl: 'https://cdn-icons-png.flaticon.com/128/1255/1255396.png',
                 iconSize: [40, 40],
                 iconAnchor: [20, 40],
                 popupAnchor: [0, -40]
@@ -164,7 +167,7 @@
                 current: null,
                 destination: null
             };
-            
+
             var routingControl = null;
 
             // User Select Change
@@ -180,50 +183,60 @@
             });
 
             function loadTasks(userId) {
-                $('#taskList').html('<div class="text-center p-4"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Cargando tareas...</p></div>');
-                
-                $.get('/Assignment/GetAssignmentsList/by-user/' + userId)
-                    .done(function (data) {
-                        var listHtml = '';
-                        if (data && data.length > 0) {
-                            data.forEach(function (task) {
-                                listHtml += `
-                                    <a href="#" class="list-group-item list-group-item-action task-item" data-id="${task.id}">
-                                        <div class="d-flex w-100 justify-content-between">
-                                            <h6 class="mb-1 text-primary fw-bold">${task.service}</h6>
-                                            <small>${task.assignedDate}</small>
-                                        </div>
-                                        <p class="mb-1 text-truncate"><i class="fas fa-user-tie me-1"></i>${task.client}</p>
-                                        <small class="text-muted"><i class="fas fa-clock me-1"></i>${task.assignedTime}</small>
-                                    </a>
-                                `;
+            $('#taskList').html('<div class="text-center p-4"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Cargando tareas...</p></div>');
+
+            $.get('/Assignment/GetAssignmentsList/by-user/' + userId)
+                .done(function (data) {
+                    var listHtml = '';
+
+                    if (data && data.length > 0) {
+                        data.forEach(function (task) {
+                            const dateObj = new Date(task.assignedDate);
+
+                            const assignedDate = dateObj.toLocaleDateString("es-EC");
+                            const assignedTime = dateObj.toLocaleTimeString("es-EC", {
+                                hour: "2-digit",
+                                minute: "2-digit"
                             });
-                            $('#taskList').html(listHtml);
-                            $('#taskCount').text(data.length);
-                        } else {
-                            $('#taskList').html('<div class="text-center p-4 text-muted"><p>No se encontraron asignaciones para este usuario.</p></div>');
-                            $('#taskCount').text('0');
-                        }
-                    })
-                    .fail(function () {
-                        $('#taskList').html('<div class="text-center p-4 text-danger"><p>Error al cargar las tareas.</p></div>');
+                            listHtml += `
+                                <a href="#" class="list-group-item list-group-item-action task-item" data-id="${task.id}">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1 text-primary fw-bold">${task.service}</h6>
+                                        <small>${assignedDate}</small>
+                                    </div>
+                                    <p class="mb-1 text-truncate"><i class="fas fa-user-tie me-1"></i>${task.client}</p>
+                                    <small class="text-muted"><i class="fas fa-clock me-1"></i>${assignedTime}</small>
+                                </a>
+                            `;
+                        });
+
+                        $('#taskList').html(listHtml);
+                        $('#taskCount').text(data.length);
+
+                    } else {
+                        $('#taskList').html('<div class="text-center p-4 text-muted"><p>No se encontraron asignaciones para este usuario.</p></div>');
                         $('#taskCount').text('0');
-                    });
-            }
+                    }
+                })
+                .fail(function () {
+                    $('#taskList').html('<div class="text-center p-4 text-danger"><p>Error al cargar las tareas.</p></div>');
+                    $('#taskCount').text('0');
+                });
+        }
 
             // Task Click
             $(document).on('click', '.task-item', function (e) {
                 e.preventDefault();
                 $('.task-item').removeClass('active');
                 $(this).addClass('active');
-                
+
                 var assignmentId = $(this).data('id');
                 loadTracking(assignmentId);
             });
 
             function loadTracking(assignmentId) {
                 $('#trackingStatus').html('<span class="text-warning"><i class="fas fa-spinner fa-spin me-1"></i>Actualizando ubicación...</span>');
-                
+
                 $.get('/Assignment/GetAssignmentTracking/tracking/' + assignmentId)
                     .done(function (data) {
                         updateMap(data);
@@ -243,12 +256,12 @@
                 if (data.destinationLocation) {
                     destLat = data.destinationLocation.latitude;
                     destLng = data.destinationLocation.longitude;
-                    
+
                     markers.destination = L.marker([destLat, destLng], { icon: destinationIcon })
                         .addTo(map)
                         .bindPopup(`<b>Destino</b><br>${data.client}<br>${data.address}<br>Hora: ${data.assignedTime || 'N/A'}`)
                         .openPopup();
-                    
+
                     bounds.push([destLat, destLng]);
                 }
 
@@ -256,7 +269,7 @@
                 if (data.currentLocation) {
                     curLat = data.currentLocation.latitude;
                     curLng = data.currentLocation.longitude;
-                    
+
                     markers.current = L.marker([curLat, curLng], { icon: technicianIcon })
                         .addTo(map);
 
@@ -281,7 +294,7 @@
                              var newContent = `<b>Técnico</b><br>Error al obtener dirección<br><small>Ultima actualización: ${new Date(data.currentLocation.updatedAt).toLocaleTimeString()}</small>`;
                              markers.current.setPopupContent(newContent);
                         });
-                    
+
                     bounds.push([curLat, curLng]);
                 }
 
@@ -289,7 +302,7 @@
                 if (bounds.length > 0) {
                     map.fitBounds(bounds, { padding: [50, 50] });
                 } else {
-                    map.setView([-0.1807, -78.4678], 12); 
+                    map.setView([-0.1807, -78.4678], 12);
                     alert('No hay coordenadas disponibles para esta asignación.');
                 }
 
@@ -332,19 +345,19 @@
                     }).on('routesfound', function(e) {
                         var routes = e.routes;
                         var summary = routes[0].summary;
-                        
+
                         // Format values
-                        var dist = summary.totalDistance > 1000 
-                            ? (summary.totalDistance / 1000).toFixed(1) + ' km' 
+                        var dist = summary.totalDistance > 1000
+                            ? (summary.totalDistance / 1000).toFixed(1) + ' km'
                             : Math.round(summary.totalDistance) + ' m';
-                        
+
                         var time = Math.round(summary.totalTime / 60) + ' min';
                         if (summary.totalTime > 3600) {
                             var h = Math.floor(summary.totalTime / 3600);
                             var m = Math.round((summary.totalTime % 3600) / 60);
                             time = `${h} h ${m} min`;
                         }
-                        
+
                         $('#routeDist').text(dist);
                         $('#routeTime').text(time);
                         $('#routeSummary').removeClass('d-none');
