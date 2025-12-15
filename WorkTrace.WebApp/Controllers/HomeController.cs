@@ -102,7 +102,7 @@ public class HomeController : Controller
             {
                 id = a.Id,
                 title = statusDict.GetValueOrDefault(a.Status, "Estado Desconocido"),
-                start = a.Date,
+                start = a.AssignedDate,
                 extendedProps = new
                 {
                     client = clientDict.GetValueOrDefault(a.Client, "Cliente Desconocido"),

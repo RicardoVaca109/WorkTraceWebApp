@@ -150,7 +150,7 @@
                 attribution: '&copy; Google'
             }).addTo(map);
 
-            // Esri World Boundaries and Places Overlay Layer (for street names, labels, and points of interest)
+            // Esri World Boundaries and Places Overlay Layer
             L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
                 attribution: '&copy; Google, &copy; Esri, DeLorme, HERE, TomTom',
                 zIndex: 2
@@ -177,60 +177,63 @@
             };
 
             var routingControl = null;
+            var trackingInterval = null;
 
             // User Select Change
             $('#userSelect').on('select2:select', function (e) {
                 var userId = e.params.data.id;
+                stopTracking();
+                clearMap();
                 loadTasks(userId);
             });
 
             $('#userSelect').on('select2:unselect', function (e) {
                 $('#taskList').html('<div class="text-center p-4 text-muted"><i class="fas fa-tasks fa-2x mb-2"></i><p>Seleccione un usuario para ver sus tareas.</p></div>');
                 $('#taskCount').text('0');
+                stopTracking();
                 clearMap();
             });
 
             function loadTasks(userId) {
-            $('#taskList').html('<div class="text-center p-4"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Cargando tareas...</p></div>');
+                $('#taskList').html('<div class="text-center p-4"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Cargando tareas...</p></div>');
 
-            $.get('/Assignment/GetAssignmentsList/by-user/' + userId)
-                .done(function (data) {
-                    var listHtml = '';
+                $.get('/Assignment/GetAssignmentsList/by-user/' + userId)
+                    .done(function (data) {
+                        var listHtml = '';
 
-                    if (data && data.length > 0) {
-                        data.forEach(function (task) {
-                            const dateObj = new Date(task.assignedDate);
-
-                            const assignedDate = dateObj.toLocaleDateString("es-EC");
-                            const assignedTime = dateObj.toLocaleTimeString("es-EC", {
-                                hour: "2-digit",
-                                minute: "2-digit"
+                        if (data && data.length > 0) {
+                            data.forEach(function (task) {
+                                const dateObj = new Date(task.assignedDate);
+                                const assignedDate = dateObj.toLocaleDateString("es-EC");
+                                const assignedTime = dateObj.toLocaleTimeString("es-EC", {
+                                    hour: "2-digit",
+                                    minute: "2-digit"
+                                });
+                                listHtml += `
+                                    <a href="#" class="list-group-item list-group-item-action task-item" data-id="${task.id}">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1 text-primary fw-bold">${task.service}</h6>
+                                            <small>${assignedDate}</small>
+                                        </div>
+                                        <p class="mb-1 text-truncate"><i class="fas fa-user-tie me-1"></i>${task.client}</p>
+                                        <small class="text-muted"><i class="fas fa-clock me-1"></i>${assignedTime}</small>
+                                    </a>
+                                `;
                             });
-                            listHtml += `
-                                <a href="#" class="list-group-item list-group-item-action task-item" data-id="${task.id}">
-                                    <div class="d-flex w-100 justify-content-between">
-                                        <h6 class="mb-1 text-primary fw-bold">${task.service}</h6>
-                                        <small>${assignedDate}</small>
-                                    </div>
-                                    <p class="mb-1 text-truncate"><i class="fas fa-user-tie me-1"></i>${task.client}</p>
-                                    <small class="text-muted"><i class="fas fa-clock me-1"></i>${assignedTime}</small>
-                                </a>
-                            `;
-                        });
 
-                        $('#taskList').html(listHtml);
-                        $('#taskCount').text(data.length);
+                            $('#taskList').html(listHtml);
+                            $('#taskCount').text(data.length);
 
-                    } else {
-                        $('#taskList').html('<div class="text-center p-4 text-muted"><p>No se encontraron asignaciones para este usuario.</p></div>');
+                        } else {
+                            $('#taskList').html('<div class="text-center p-4 text-muted"><p>No se encontraron asignaciones para este usuario.</p></div>');
+                            $('#taskCount').text('0');
+                        }
+                    })
+                    .fail(function () {
+                        $('#taskList').html('<div class="text-center p-4 text-danger"><p>Error al cargar las tareas.</p></div>');
                         $('#taskCount').text('0');
-                    }
-                })
-                .fail(function () {
-                    $('#taskList').html('<div class="text-center p-4 text-danger"><p>Error al cargar las tareas.</p></div>');
-                    $('#taskCount').text('0');
-                });
-        }
+                    });
+            }
 
             // Task Click
             $(document).on('click', '.task-item', function (e) {
@@ -239,142 +242,170 @@
                 $(this).addClass('active');
 
                 var assignmentId = $(this).data('id');
+                
+                stopTracking(); // Clear existing interval/status
+                
+                // Load immediately
                 loadTracking(assignmentId);
+
+                // Start polling loop (10 seconds)
+                trackingInterval = setInterval(function() {
+                    loadTracking(assignmentId, true);
+                }, 10000);
             });
 
-            function loadTracking(assignmentId) {
-                $('#trackingStatus').html('<span class="text-warning"><i class="fas fa-spinner fa-spin me-1"></i>Actualizando ubicación...</span>');
+            function stopTracking(clearStatus = true) {
+                if (trackingInterval) {
+                    clearInterval(trackingInterval);
+                    trackingInterval = null;
+                }
+                if (clearStatus) {
+                    $('#trackingStatus').empty();
+                }
+            }
+
+            function loadTracking(assignmentId, isUpdate = false) {
+                if (!isUpdate) {
+                    $('#trackingStatus').html('<span class="text-warning"><i class="fas fa-spinner fa-spin me-1"></i>Conectando...</span>');
+                } else {
+                    $('#trackingStatus').html('<span class="text-info"><i class="fas fa-sync fa-spin me-1"></i>Actualizando...</span>');
+                }
 
                 $.get('/Assignment/GetAssignmentTracking/tracking/' + assignmentId)
                     .done(function (data) {
                         updateMap(data);
-                        $('#trackingStatus').html('<span class="text-success"><i class="fas fa-check-circle me-1"></i>Datos actualizados</span>');
+                        
+                        if (data.checkOutDate || data.checkOutTime) {
+                            stopTracking(false);
+                            $('#trackingStatus').html('<span class="text-dark fw-bold"><i class="fas fa-flag-checkered text-success me-1"></i>Finalizado</span>');
+                        } else if (!data.currentLocation) {
+                            $('#trackingStatus').html('<span class="text-secondary fw-bold"><i class="fas fa-eye-slash me-1"></i>Sin señal</span>');
+                        } else {
+                            setTimeout(() => {
+                                $('#trackingStatus').html('<span class="text-success fw-bold"><i class="fas fa-circle text-danger me-1"></i>En vivo</span>');
+                            }, 500);
+                        }
                     })
                     .fail(function () {
-                        $('#trackingStatus').html('<span class="text-danger"><i class="fas fa-exclamation-circle me-1"></i>Error de conexión</span>');
+                        $('#trackingStatus').html('<span class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i>Conexión perdida</span>');
                     });
             }
 
             function updateMap(data) {
-                clearMap();
-                var bounds = [];
                 var curLat, curLng, destLat, destLng;
+                var techLatLng = null, destLatLng = null;
 
-                // Destination Marker
+                // 1. Destination Marker Logic
                 if (data.destinationLocation) {
                     destLat = data.destinationLocation.latitude;
                     destLng = data.destinationLocation.longitude;
+                    destLatLng = L.latLng(destLat, destLng);
 
-                    markers.destination = L.marker([destLat, destLng], { icon: destinationIcon })
-                        .addTo(map)
-                        .bindPopup(`<b>Destino</b><br>${data.client}<br>${data.address}<br>Hora: ${data.assignedTime || 'N/A'}`)
-                        .openPopup();
-
-                    bounds.push([destLat, destLng]);
+                    if (markers.destination) {
+                        markers.destination.setLatLng(destLatLng);
+                        markers.destination.setPopupContent(`<b>Destino</b><br>${data.client}<br>${data.address}<br>Hora: ${data.assignedTime || 'N/A'}`);
+                    } else {
+                        markers.destination = L.marker(destLatLng, { icon: destinationIcon })
+                            .addTo(map)
+                            .bindPopup(`<b>Destino</b><br>${data.client}<br>${data.address}<br>Hora: ${data.assignedTime || 'N/A'}`)
+                            .openPopup();
+                    }
+                } else {
+                    if (markers.destination) {
+                        map.removeLayer(markers.destination);
+                        markers.destination = null;
+                    }
                 }
 
-                // Current Location Marker (Technician)
+                // 2. Technician Marker Logic (Current Location)
                 if (data.currentLocation) {
                     curLat = data.currentLocation.latitude;
                     curLng = data.currentLocation.longitude;
+                    techLatLng = L.latLng(curLat, curLng);
 
-                    // Get Technician Name from Dropdown
                     var techNameRaw = $("#userSelect option:selected").text();
-                    // Split by "(" to remove the role if present, e.g. "Name (Role)" -> "Name"
                     var techName = techNameRaw ? techNameRaw.split(' (')[0] : "Técnico";
+                    var lastUpdate = new Date(data.currentLocation.updatedAt).toLocaleTimeString();
 
-                    markers.current = L.marker([curLat, curLng], { icon: technicianIcon })
-                        .addTo(map);
+                    if (markers.current) {
+                        markers.current.setLatLng(techLatLng);
+                    } else {
+                        markers.current = L.marker(techLatLng, { icon: technicianIcon }).addTo(map);
+                    }
 
-                    var popupContent = `<b>${techName}</b><br><i class="fas fa-spinner fa-spin"></i> Cargando dirección...<br><small>Ultima actualización: ${new Date(data.currentLocation.updatedAt).toLocaleTimeString()}</small>`;
-                    markers.current.bindPopup(popupContent);
-
-                    // Reverse Geocoding for Technician
+                    // Async Address Fetch for Popup
                     fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${curLat}&lon=${curLng}`)
                         .then(response => response.json())
                         .then(addressData => {
-                            if (addressData && addressData.display_name) {
-                                var address = addressData.display_name;
-                                var newContent = `<b>${techName}</b><br>${address}<br><small>Ultima actualización: ${new Date(data.currentLocation.updatedAt).toLocaleTimeString()}</small>`;
-                                markers.current.setPopupContent(newContent);
-                            } else {
-                                 var newContent = `<b>${techName}</b><br>Dirección no disponible<br><small>Ultima actualización: ${new Date(data.currentLocation.updatedAt).toLocaleTimeString()}</small>`;
-                                 markers.current.setPopupContent(newContent);
-                            }
+                            var address = (addressData && addressData.display_name) ? addressData.display_name : "Dirección no disponible";
+                            var content = `<b>${techName}</b><br>${address}<br><small>Actualizado: ${lastUpdate}</small>`;
+                            markers.current.bindPopup(content).setPopupContent(content);
                         })
                         .catch(error => {
-                            console.error('Error fetching technician address:', error);
-                             var newContent = `<b>${techName}</b><br>Error al obtener dirección<br><small>Ultima actualización: ${new Date(data.currentLocation.updatedAt).toLocaleTimeString()}</small>`;
-                             markers.current.setPopupContent(newContent);
+                             var content = `<b>${techName}</b><br>Error dirección<br><small>Actualizado: ${lastUpdate}</small>`;
+                             markers.current.bindPopup(content).setPopupContent(content);
                         });
-
-                    bounds.push([curLat, curLng]);
-                }
-
-                // Fit bounds
-                if (bounds.length > 0) {
-                    map.fitBounds(bounds, { padding: [50, 50] });
                 } else {
-                    map.setView([-0.1807, -78.4678], 12);
-                    alert('No hay coordenadas disponibles para esta asignación.');
+                    if (markers.current) {
+                        map.removeLayer(markers.current);
+                        markers.current = null;
+                    }
                 }
 
-                // Calculate Route & Proximity
-                if (data.destinationLocation && data.currentLocation) {
-                    var technicianLatLng = L.latLng(curLat, curLng);
-                    var destinationLatLng = L.latLng(destLat, destLng);
+                // 3. Routing Logic (Recalculate route)
+                if (techLatLng && destLatLng) {
+                    if (routingControl) {
+                        // Updating waypoints triggers 'routesfound' automatically
+                        routingControl.setWaypoints([techLatLng, destLatLng]);
+                    } else {
+                        routingControl = L.Routing.control({
+                            waypoints: [techLatLng, destLatLng],
+                            router: L.Routing.osrmv1({
+                                serviceUrl: 'https://router.project-osrm.org/route/v1'
+                            }),
+                            lineOptions: {
+                                styles: [{color: '#0d6efd', opacity: 0.7, weight: 5}]
+                            },
+                            createMarker: function() { return null; }, // Suppress default markers
+                            addWaypoints: false,
+                            draggableWaypoints: false,
+                            fitSelectedRoutes: false, // Prevent map jumping on every update
+                            show: false
+                        }).on('routesfound', function(e) {
+                            var routes = e.routes;
+                            var summary = routes[0].summary;
 
-                    // Proximity Check (< 100m)
-                    if (map.distance(technicianLatLng, destinationLatLng) < 100) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'En Sitio',
-                            text: '📍 El técnico ha llegado al punto de servicio',
-                            toast: true,
-                            position: 'top-end',
-                            showConfirmButton: false,
-                            showCloseButton: true,
-                            timer: 0,
-                            timerProgressBar: false
-                        });
+                            var dist = summary.totalDistance > 1000
+                                ? (summary.totalDistance / 1000).toFixed(1) + ' km'
+                                : Math.round(summary.totalDistance) + ' m';
+
+                            var time = Math.round(summary.totalTime / 60) + ' min';
+                            if (summary.totalTime > 3600) {
+                                var h = Math.floor(summary.totalTime / 3600);
+                                var m = Math.round((summary.totalTime % 3600) / 60);
+                                time = `${h} h ${m} min`;
+                            }
+
+                            $('#routeDist').text(dist);
+                            $('#routeTime').text(time);
+                            $('#routeSummary').removeClass('d-none');
+                        }).addTo(map);
+                        
+                        // Initial fit bounds only
+                        map.fitBounds([techLatLng, destLatLng], { padding: [50, 50] });
                     }
 
-                    routingControl = L.Routing.control({
-                        waypoints: [
-                            technicianLatLng,
-                            destinationLatLng
-                        ],
-                        router: L.Routing.osrmv1({
-                            serviceUrl: 'https://router.project-osrm.org/route/v1'
-                        }),
-                        lineOptions: {
-                            styles: [{color: '#0d6efd', opacity: 0.7, weight: 5}]
-                        },
-                        createMarker: function() { return null; }, // Suppress default markers
-                        addWaypoints: false,
-                        draggableWaypoints: false,
-                        fitSelectedRoutes: false, // We control bounds manually
-                        show: false // Attempt to hide UI via option
-                    }).on('routesfound', function(e) {
-                        var routes = e.routes;
-                        var summary = routes[0].summary;
-
-                        // Format values
-                        var dist = summary.totalDistance > 1000
-                            ? (summary.totalDistance / 1000).toFixed(1) + ' km'
-                            : Math.round(summary.totalDistance) + ' m';
-
-                        var time = Math.round(summary.totalTime / 60) + ' min';
-                        if (summary.totalTime > 3600) {
-                            var h = Math.floor(summary.totalTime / 3600);
-                            var m = Math.round((summary.totalTime % 3600) / 60);
-                            time = `${h} h ${m} min`;
-                        }
-
-                        $('#routeDist').text(dist);
-                        $('#routeTime').text(time);
-                        $('#routeSummary').removeClass('d-none');
-                    }).addTo(map);
+                    // Proximity Alert (optional but good for UX)
+                    if (map.distance(techLatLng, destLatLng) < 100) {
+                        // Can show a toast or console log
+                    }
+                } else {
+                    // No route possible
+                    if (routingControl) {
+                        map.removeControl(routingControl);
+                        routingControl = null;
+                        $('#routeSummary').addClass('d-none');
+                    }
                 }
             }
 
