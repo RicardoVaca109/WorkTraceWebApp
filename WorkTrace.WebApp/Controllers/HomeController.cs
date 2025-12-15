@@ -110,8 +110,8 @@ public class HomeController : Controller
                     users = a.Users.Select(userId => userDict.GetValueOrDefault(userId, "Usuario Desconocido")).ToList(),
                     address = a.Address,
                     status = statusDict.GetValueOrDefault(a.Status, "Estado Desconocido"),
-                    checkIn = a.CheckIn?.ToString("g"),
-                    checkOut = a.CheckOut?.ToString("g"),
+                    checkIn = a.CheckIn,
+                    checkOut = a.CheckOut,
                     createdByUser = a.CreatedByUser
                 }
             }).ToList();

@@ -258,6 +258,32 @@
                         var props = info.event.extendedProps;
                         var modal = $('#assignmentDetailModal');
                         modal.find('.modal-title').text('Detalle de la Asignación');
+                        
+                        var formatToLocalDateTime = (isoString) => {
+                            if (!isoString) return { date: 'No registrado', time: '' };
+                            const date = new Date(isoString);
+                            
+                            if (isNaN(date.getTime())) return { date: 'Inválido', time: '' };
+
+                            // Use Intl.DateTimeFormat for robust local conversion
+                            const datePart = new Intl.DateTimeFormat('es-ES', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit'
+                            }).format(date);
+
+                            const timePart = new Intl.DateTimeFormat('es-ES', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: false
+                            }).format(date);
+
+                            return { date: datePart, time: timePart };
+                        };
+
+                        var ci = formatToLocalDateTime(props.checkIn);
+                        var co = formatToLocalDateTime(props.checkOut);
+
                         var userList = props.users && props.users.length > 0 ? '<ul>' + props.users.map(u => `<li>${u}</li>`).join('') + '</ul>' : '<p>No hay técnicos asignados.</p>';
                         var bodyContent = `<p><strong><i class="fas fa-user-tie me-2"></i>Cliente:</strong> ${props.client}</p>
                                            <p><strong><i class="fas fa-concierge-bell me-2"></i>Servicio:</strong> ${props.service}</p>
@@ -265,8 +291,30 @@
                                            <p><strong><i class="fas fa-calendar-alt me-2"></i>Fecha:</strong> ${info.event.start.toLocaleDateString()}</p>
                                            <p><strong><i class="fas fa-clock me-2"></i>Hora:</strong> ${info.event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p><hr/>
                                            <p><strong><i class="fas fa-info-circle me-2"></i>Estado:</strong> <span class="badge bg-primary">${props.status}</span></p>
-                                           <p><strong><i class="far fa-calendar-check me-2"></i>Check-In:</strong> ${props.checkIn || 'No registrado'}</p>
-                                           <p><strong><i class="far fa-calendar-times me-2"></i>Check-Out:</strong> ${props.checkOut || 'No registrado'}</p>
+                                           <div class="row my-2">
+                                                <div class="col-6">
+                                                    <div class="p-2 border rounded bg-light">
+                                                        <h6 class="text-success mb-2"><i class="far fa-calendar-check me-2"></i>Check-In</h6>
+                                                        <div class="d-flex flex-column">
+                                                            <span class="small text-muted">Fecha</span>
+                                                            <span class="fw-bold">${ci.date}</span>
+                                                            <span class="small text-muted mt-1">Hora</span>
+                                                            <span class="fw-bold">${ci.time || '--:--'}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-6">
+                                                    <div class="p-2 border rounded bg-light">
+                                                        <h6 class="text-danger mb-2"><i class="far fa-calendar-times me-2"></i>Check-Out</h6>
+                                                        <div class="d-flex flex-column">
+                                                            <span class="small text-muted">Fecha</span>
+                                                            <span class="fw-bold">${co.date}</span>
+                                                            <span class="small text-muted mt-1">Hora</span>
+                                                            <span class="fw-bold">${co.time || '--:--'}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                           </div>
                                            <p><strong><i class="fas fa-user-plus me-2"></i>Creado por:</strong> ${userMap[props.createdByUser] || 'No registrado'}</p><hr/>
                                            <p><strong><i class="fas fa-users me-2"></i>Técnicos Asignados:</strong></p>${userList}`;
                         modal.find('.modal-body').html(bodyContent);

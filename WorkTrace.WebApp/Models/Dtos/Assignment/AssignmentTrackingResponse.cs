@@ -10,6 +10,7 @@ namespace WorkTrace.WebApp.Models.Dtos.Assignment
         public string? CheckInTime { get; set; }
         public string? CheckOutDate { get; set; }
         public string? CheckOutTime { get; set; }
+        public string? AssignedTime { get; set; }
         public GeoPoint? CurrentLocation { get; set; }
         public GeoPoint? DestinationLocation { get; set; }
     }
