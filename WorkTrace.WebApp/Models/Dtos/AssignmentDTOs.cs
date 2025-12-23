@@ -48,39 +48,10 @@ namespace WorkTrace.WebApp.Models.Dtos
     public class ClientHistoryResponse
     {
         public string Service { get; set; } = string.Empty;
-        public string Date { get; set; } = string.Empty;
-        public string Time { get; set; } = string.Empty;
-        public string CheckOutDate { get; set; } = string.Empty;
-        public string CheckOutTime { get; set; } = string.Empty;
+        public DateTime AssignedDate { get; set; }
+        public DateTime? CheckOut { get; set; }
         public string Status { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
         public List<string> Users { get; set; } = new();
- 
-        public DateTime GetDate()
-        {
-            if (DateTime.TryParseExact($"{Date} {Time}", "dd-MM-yyyy HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDateTime))
-            {
-                return parsedDateTime;
-            }
-            // Fallback for just date if time is missing
-            if (DateTime.TryParseExact(Date, "dd-MM-yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out parsedDateTime))
-            {
-                return parsedDateTime;
-            }
-            return default;
-        }
- 
-        public DateTime? GetCheckOutDate()
-        {
-            if (string.IsNullOrWhiteSpace(CheckOutDate) || string.IsNullOrWhiteSpace(CheckOutTime))
-            {
-                return null;
-            }
-            if (DateTime.TryParseExact($"{CheckOutDate} {CheckOutTime}", "dd-MM-yyyy HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDateTime))
-            {
-                return parsedDateTime;
-            }
-            return null;
-        }
     }
 }

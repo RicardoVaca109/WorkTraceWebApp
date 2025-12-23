@@ -275,7 +275,7 @@
                     .done(function (data) {
                         updateMap(data);
                         
-                        if (data.checkOutDate || data.checkOutTime) {
+                        if (data.checkOut) {
                             stopTracking(false);
                             $('#trackingStatus').html('<span class="text-dark fw-bold"><i class="fas fa-flag-checkered text-success me-1"></i>Finalizado</span>');
                         } else if (!data.currentLocation) {
@@ -301,13 +301,17 @@
                     destLng = data.destinationLocation.longitude;
                     destLatLng = L.latLng(destLat, destLng);
 
+                    var assignedTimeFormatted = data.assignedDate 
+                        ? new Date(data.assignedDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) 
+                        : 'N/A';
+
                     if (markers.destination) {
                         markers.destination.setLatLng(destLatLng);
-                        markers.destination.setPopupContent(`<b>Destino</b><br>${data.client}<br>${data.address}<br>Hora: ${data.assignedTime || 'N/A'}`);
+                        markers.destination.setPopupContent(`<b>Destino</b><br>${data.client}<br>${data.address}<br>Hora: ${assignedTimeFormatted}`);
                     } else {
                         markers.destination = L.marker(destLatLng, { icon: destinationIcon })
                             .addTo(map)
-                            .bindPopup(`<b>Destino</b><br>${data.client}<br>${data.address}<br>Hora: ${data.assignedTime || 'N/A'}`)
+                            .bindPopup(`<b>Destino</b><br>${data.client}<br>${data.address}<br>Hora: ${assignedTimeFormatted}`)
                             .openPopup();
                     }
                 } else {
