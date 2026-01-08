@@ -24,6 +24,7 @@ public class HomeController : Controller
     private readonly IClientApiService _clientApiService;
     private readonly IServiceApiService _serviceApiService;
     private readonly IStatusApiService _statusApiService;
+    private readonly IFormTemplateApiService _formTemplateApiService;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
 
@@ -34,6 +35,7 @@ public class HomeController : Controller
         IClientApiService clientApiService,
         IServiceApiService serviceApiService,
         IStatusApiService statusApiService,
+        IFormTemplateApiService formTemplateApiService,
         IHttpContextAccessor httpContextAccessor)
     {
         _logger = logger;
@@ -42,6 +44,7 @@ public class HomeController : Controller
         _clientApiService = clientApiService;
         _serviceApiService = serviceApiService;
         _statusApiService = statusApiService;
+        _formTemplateApiService = formTemplateApiService;
         _httpContextAccessor = httpContextAccessor;
     }
 
@@ -60,9 +63,19 @@ public class HomeController : Controller
         return View();
     }
 
-    public IActionResult Estadistica()
+    public async Task<IActionResult> Estadistica()
     {
-        return View();
+        try 
+        {
+            var templates = await _formTemplateApiService.GetAllAsync() ?? new List<WorkTrace.WebApp.Models.Dtos.FormTemplate.FormTemplateResponse>();
+            return View(templates);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching form templates");
+            TempData["Error"] = "Error al cargar las plantillas de formulario.";
+            return View(new List<WorkTrace.WebApp.Models.Dtos.FormTemplate.FormTemplateResponse>());
+        }
     }
 
     private string? GetUserIdFromSession()

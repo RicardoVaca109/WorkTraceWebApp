@@ -1,17 +1,456 @@
+@model List<WorkTrace.WebApp.Models.Dtos.FormTemplate.FormTemplateResponse>
 @{
-    ViewData["Title"] = "Estadística";
+    ViewData["Title"] = "Gestor de Plantillas de Formulario";
 }
 
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>@ViewData["Title"]</h1>
-        <a asp-action="Index" asp-controller="Home" class="btn btn-secondary">
-            <i class="fas fa-arrow-left me-2"></i>Volver al Panel Principal
-        </a>
-    </div>
-    <div class="card">
-        <div class="card-body text-center">
-            <p class="lead">Página de Estadística en construcción.</p>
+<div class="container-fluid py-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+            <h4 class="mb-0 text-primary"><i class="fas fa-clipboard-list me-2"></i>@ViewData["Title"]</h4>
+            <div>
+                <button type="button" class="btn btn-primary" onclick="openCreateModal()">
+                    <i class="fas fa-plus me-2"></i>Nueva Plantilla
+                </button>
+                <a asp-action="Index" asp-controller="Home" class="btn btn-secondary ms-2">
+                    <i class="fas fa-arrow-left me-2"></i>Volver
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="templatesTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                            <th>Estado</th>
+                            <th>Preguntas</th>
+                            <th>Fecha Creación</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="fw-bold">@item.Name</td>
+                                    <td>@item.Description</td>
+                                    <td>
+                                        @if (item.IsActive)
+                                        {
+                                            <span class="badge bg-success">Activo</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Inactivo</span>
+                                        }
+                                    </td>
+                                    <td><span class="badge bg-info text-dark">@item.Questions.Count</span></td>
+                                    <td>@item.CreatedAt.ToShortDateString()</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal('@item.Id')" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        @if (item.IsActive)
+                                        {
+                                            <button class="btn btn-sm btn-outline-danger" onclick="toggleStatus('@item.Id', false)" title="Desactivar">
+                                                <i class="fas fa-ban"></i>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-sm btn-outline-success" onclick="toggleStatus('@item.Id', true)" title="Activar">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">
+                                    <i class="fas fa-inbox fa-2x mb-3 d-block"></i>
+                                    No hay plantillas creadas aún.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
+
+<!-- Form Template Modal -->
+<div class="modal fade" id="formTemplateModal" tabindex="-1" aria-labelledby="formTemplateModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="formTemplateModalLabel">Nueva Plantilla</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <form id="templateForm">
+                    <input type="hidden" id="templateId" name="id" />
+                    
+                    <!-- Header Section -->
+                    <div class="card mb-4 shadow-sm">
+                        <div class="card-header bg-white">
+                            <h6 class="mb-0 text-primary">Información General</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-8">
+                                    <label for="templateName" class="form-label fw-bold">Nombre de la Plantilla <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="templateName" name="name" required placeholder="Ej. Formulario de Instalación Fibra Óptica">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">Estado</label>
+                                    <div class="form-check form-switch mt-2">
+                                        <input class="form-check-input" type="checkbox" id="templateIsActive" name="isActive" checked>
+                                        <label class="form-check-label" for="templateIsActive">Activo</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label for="templateDescription" class="form-label fw-bold">Descripción <span class="text-danger">*</span></label>
+                                    <textarea class="form-control" id="templateDescription" name="description" rows="2" required placeholder="Breve descripción del propósito de este formulario..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Questions Builder Section -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 text-primary">Constructor de Preguntas</h6>
+                            <button type="button" class="btn btn-sm btn-success" onclick="addQuestion()">
+                                <i class="fas fa-plus me-1"></i> Agregar Pregunta
+                            </button>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0" id="questionsTable">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 5%">#</th>
+                                            <th style="width: 25%">Identificador (Key)</th>
+                                            <th style="width: 45%">Texto de la Pregunta</th>
+                                            <th style="width: 20%">Tipo de Respuesta</th>
+                                            <th style="width: 5%" class="text-center"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="questionsContainer">
+                                        <!-- Questions will be injected here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="emptyQuestionsMsg" class="text-center py-5 text-muted">
+                                <i class="fas fa-clipboard-question fa-3x mb-3 text-secondary"></i>
+                                <p>No hay preguntas agregadas. Haga clic en "Agregar Pregunta" para comenzar.</p>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveTemplate()">
+                    <i class="fas fa-save me-2"></i>Guardar Plantilla
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Question Row Template (Hidden) -->
+<template id="questionRowTemplate">
+    <tr class="question-row">
+        <td class="align-middle text-center row-index fw-bold text-muted"></td>
+        <td>
+            <input type="hidden" class="q-id" value="" />
+            <input type="text" class="form-control form-control-sm q-key" placeholder="Ej. foto_antes" required>
+            <div class="invalid-feedback">Requerido.</div>
+        </td>
+        <td>
+            <input type="text" class="form-control form-control-sm q-text" placeholder="Ej. Tomar foto antes de la instalación" required>
+            <div class="invalid-feedback">Requerido.</div>
+        </td>
+        <td>
+            <select class="form-select form-select-sm q-type">
+                <option value="1">Texto / Foto</option>
+                <option value="2">Numérico</option>
+            </select>
+        </td>
+        <td class="text-center align-middle">
+            <button type="button" class="btn btn-link text-danger p-0" onclick="removeQuestion(this)" title="Eliminar">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+        </td>
+    </tr>
+</template>
+
+@section Scripts {
+    <script>
+        const AnswerType = {
+            Text: 1,
+            Numeric: 2
+        };
+
+        let isEditing = false;
+
+        function openCreateModal() {
+            isEditing = false;
+            document.getElementById('templateForm').reset();
+            document.getElementById('templateId').value = '';
+            document.getElementById('questionsContainer').innerHTML = '';
+            document.getElementById('formTemplateModalLabel').innerText = 'Nueva Plantilla';
+            document.getElementById('templateIsActive').checked = true;
+            updateQuestionsUI();
+            
+            // Add one empty question by default
+            addQuestion();
+            
+            new bootstrap.Modal(document.getElementById('formTemplateModal')).show();
+        }
+
+        async function openEditModal(id) {
+            isEditing = true;
+            document.getElementById('formTemplateModalLabel').innerText = 'Editar Plantilla';
+            
+            try {
+                Swal.fire({ title: 'Cargando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                
+                const response = await fetch(`@Url.Action("GetById", "FormTemplate")?id=${id}`);
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const result = await response.json();
+                
+                Swal.close();
+
+                if (result.success) {
+                    const data = result.data;
+                    document.getElementById('templateId').value = data.id || '';
+                    document.getElementById('templateName').value = data.name || '';
+                    document.getElementById('templateDescription').value = data.description || '';
+                    document.getElementById('templateIsActive').checked = data.isActive;
+
+                    const container = document.getElementById('questionsContainer');
+                    container.innerHTML = '';
+
+                    if (data.questions && data.questions.length > 0) {
+                        data.questions.forEach(q => addQuestion(q));
+                    } else {
+                        addQuestion();
+                    }
+                    
+                    new bootstrap.Modal(document.getElementById('formTemplateModal')).show();
+                } else {
+                    Swal.fire('Error', result.message, 'error');
+                }
+            } catch (error) {
+                Swal.close();
+                console.error(error);
+                Swal.fire('Error', 'No se pudo cargar la plantilla.', 'error');
+            }
+        }
+
+        function addQuestion(data = null) {
+            const template = document.getElementById('questionRowTemplate');
+            const clone = template.content.cloneNode(true);
+            const container = document.getElementById('questionsContainer');
+            
+            if (data) {
+                // Safely handle potentially missing ID or camelCase/PascalCase differences
+                clone.querySelector('.q-id').value = data.id || data.Id || '';
+                clone.querySelector('.q-key').value = data.questionKey || data.QuestionKey || '';
+                clone.querySelector('.q-text').value = data.questionText || data.QuestionText || '';
+                clone.querySelector('.q-type').value = data.answerType || data.AnswerType || 1;
+            }
+
+            container.appendChild(clone);
+            updateQuestionsUI();
+        }
+
+        function removeQuestion(btn) {
+            const row = btn.closest('tr');
+            row.remove();
+            updateQuestionsUI();
+        }
+
+        function updateQuestionsUI() {
+            const rows = document.querySelectorAll('.question-row');
+            const emptyMsg = document.getElementById('emptyQuestionsMsg');
+            
+            if (rows.length === 0) {
+                emptyMsg.style.display = 'block';
+            } else {
+                emptyMsg.style.display = 'none';
+                rows.forEach((row, index) => {
+                    row.querySelector('.row-index').innerText = index + 1;
+                });
+            }
+        }
+
+        async function saveTemplate() {
+            const form = document.getElementById('templateForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            // Manual validation for questions
+            const qKeys = document.querySelectorAll('.q-key');
+            const qTexts = document.querySelectorAll('.q-text');
+            let valid = true;
+            
+            qKeys.forEach(input => {
+                if(!input.value.trim()) { input.classList.add('is-invalid'); valid = false; } 
+                else { input.classList.remove('is-invalid'); }
+            });
+            qTexts.forEach(input => {
+                if(!input.value.trim()) { input.classList.add('is-invalid'); valid = false; } 
+                else { input.classList.remove('is-invalid'); }
+            });
+
+            if (!valid) {
+                Swal.fire('Atención', 'Por favor complete todos los campos de las preguntas.', 'warning');
+                return;
+            }
+
+            const id = document.getElementById('templateId').value;
+            
+            // Collect Data
+            const name = document.getElementById('templateName').value;
+            const description = document.getElementById('templateDescription').value;
+            const isActive = document.getElementById('templateIsActive').checked;
+            
+            const questions = [];
+            document.querySelectorAll('.question-row').forEach(row => {
+                const qId = row.querySelector('.q-id').value;
+                const question = {
+                    questionKey: row.querySelector('.q-key').value,
+                    questionText: row.querySelector('.q-text').value,
+                    answerType: parseInt(row.querySelector('.q-type').value)
+                };
+                
+                if (isEditing && qId && qId.trim() !== '') {
+                    question.id = qId;
+                }
+                questions.push(question);
+            });
+
+            try {
+                Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                if (isEditing) {
+                    // --- EDIT FLOW: CHAINED REQUESTS ---
+                    
+                    // 1. Update Header Information
+                    // FIX: Pass the collected 'questions' array instead of an empty one [] to satisfy backend validation ("At least one question required").
+                    const headerPayload = { name, description, isActive, questions: questions };
+                    
+                    const responseHeader = await fetch(`@Url.Action("Update", "FormTemplate")?id=${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(headerPayload)
+                    });
+
+                    if (!responseHeader.ok) throw new Error('Error de red al actualizar encabezado.');
+                    const resultHeader = await responseHeader.json();
+                    
+                    if (!resultHeader.success) {
+                        throw new Error(resultHeader.message || 'Error al actualizar información general.');
+                    }
+
+                    // 2. Update Questions (Chained call as requested)
+                    const responseQuestions = await fetch(`@Url.Action("UpdateQuestions", "FormTemplate")?id=${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(questions)
+                    });
+
+                    if (!responseQuestions.ok) throw new Error('Error de red al actualizar preguntas.');
+                    const resultQuestions = await responseQuestions.json();
+
+                    if (!resultQuestions.success) {
+                        throw new Error(resultQuestions.message || 'Error al actualizar las preguntas.');
+                    }
+
+                    // Both succeeded
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Guardado',
+                        text: 'Plantilla actualizada correctamente.',
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => location.reload());
+
+                } else {
+                    // --- CREATE FLOW: SINGLE REQUEST ---
+                    const createPayload = { name, description, isActive, questions };
+
+                    const response = await fetch(`@Url.Action("Create", "FormTemplate")`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(createPayload)
+                    });
+
+                    if (!response.ok) throw new Error('Error de red al crear plantilla.');
+                    const result = await response.json();
+
+                    if (result.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Guardado',
+                            text: result.message,
+                            showConfirmButton: false,
+                            timer: 1500
+                        }).then(() => location.reload());
+                    } else {
+                        throw new Error(result.message);
+                    }
+                }
+
+            } catch (error) {
+                Swal.close();
+                console.error(error);
+                Swal.fire('Error', error.message || 'Ocurrió un error inesperado.', 'error');
+            }
+        }
+
+        async function toggleStatus(id, activate) {
+            const action = activate ? 'activar' : 'desactivar';
+            const result = await Swal.fire({
+                title: `¿${action.charAt(0).toUpperCase() + action.slice(1)} plantilla?`,
+                text: `¿Está seguro que desea ${action} esta plantilla?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, confirmar',
+                cancelButtonText: 'Cancelar'
+            });
+
+            if (result.isConfirmed) {
+                const url = activate 
+                    ? `@Url.Action("Activate", "FormTemplate")?id=${id}` 
+                    : `@Url.Action("Deactivate", "FormTemplate")?id=${id}`;
+
+                try {
+                    const response = await fetch(url, { method: 'PATCH' });
+                    const resJson = await response.json();
+
+                    if (resJson.success) {
+                        Swal.fire('Éxito', resJson.message, 'success').then(() => location.reload());
+                    } else {
+                        Swal.fire('Error', resJson.message, 'error');
+                    }
+                } catch (error) {
+                    Swal.fire('Error', 'Error de conexión.', 'error');
+                }
+            }
+        }
+    </script>
+}
