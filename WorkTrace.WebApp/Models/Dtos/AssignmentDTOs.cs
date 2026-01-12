@@ -1,7 +1,6 @@
-using System.Globalization;
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
- 
+
 namespace WorkTrace.WebApp.Models.Dtos
 {
     public class GeoPoint

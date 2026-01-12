@@ -1,6 +1,5 @@
 using Newtonsoft.Json;
 using System.Text.Json.Serialization;
-using WorkTrace.WebApp.Models.Dtos;
 
 namespace WorkTrace.WebApp.Models.Dtos.Assignment
 {
