@@ -1,3 +1,7 @@
+using Newtonsoft.Json;
+using System.Text.Json.Serialization;
+using WorkTrace.WebApp.Models.Dtos;
+
 namespace WorkTrace.WebApp.Models.Dtos.Assignment
 {
     public class AssignmentTrackingResponse
@@ -11,5 +15,8 @@ namespace WorkTrace.WebApp.Models.Dtos.Assignment
         public DateTime AssignedDate { get; set; }
         public GeoPoint? CurrentLocation { get; set; }
         public GeoPoint? DestinationLocation { get; set; }
+        [JsonPropertyName("assignedForms")]
+        [JsonProperty("assignedForms")]
+        public List<AssignedFormResponse> AssignedForms { get; set; } = new();
     }
 }

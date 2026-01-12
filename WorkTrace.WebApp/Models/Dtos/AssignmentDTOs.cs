@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.Text.Json.Serialization;
+using Newtonsoft.Json;
  
 namespace WorkTrace.WebApp.Models.Dtos
 {
@@ -22,6 +24,9 @@ namespace WorkTrace.WebApp.Models.Dtos
         public string CreatedByUser { get; set; } = string.Empty;
         public DateTime? CheckIn { get; set; }
         public DateTime? CheckOut { get; set; }
+        [JsonPropertyName("assignedForms")]
+        [JsonProperty("assignedForms")]
+        public List<AssignedFormResponse> AssignedForms { get; set; } = new();
     }
  
     public class CreateAssignmentRequest
@@ -33,6 +38,9 @@ namespace WorkTrace.WebApp.Models.Dtos
         public DateTime AssignedDate { get; set; }
         public string Address { get; set; } = string.Empty;
         public string CreatedByUser { get; set; } = string.Empty;
+        [JsonPropertyName("assignedForms")]
+        [JsonProperty("assignedForms")]
+        public List<string> AssignedForms { get; set; } = new();
     }
  
     public class UpdateAssignmentRequest
@@ -43,6 +51,13 @@ namespace WorkTrace.WebApp.Models.Dtos
         public string? Status { get; set; }
         public DateTime? AssignedDate { get; set; }
         public string? Address { get; set; }
+        
+        [JsonPropertyName("assignedForms")]
+        [JsonProperty("assignedForms")]
+        public List<string>? AssignedForms { get; set; }
+
+        public List<string>? AddForms { get; set; }
+        public List<string>? RemoveForms { get; set; }
     }
  
     public class ClientHistoryResponse

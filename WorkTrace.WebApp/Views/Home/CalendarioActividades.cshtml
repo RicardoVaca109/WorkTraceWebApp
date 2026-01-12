@@ -20,6 +20,7 @@
             var clientMap = JSON.parse('@Html.Raw(Model?.ClientsJson ?? "{}")');
             var serviceMap = JSON.parse('@Html.Raw(Model?.ServicesJson ?? "{}")');
             var statusMap = JSON.parse('@Html.Raw(Model?.StatusesJson ?? "{}")');
+            var templateMap = JSON.parse('@Html.Raw(Model?.FormTemplatesJson ?? "{}")');
 
             function showNotification(message, type, shouldReload) {
                 Swal.fire({
@@ -35,7 +36,10 @@
             }
 
             $('#client, #service, #users, #status').select2({ dropdownParent: $('#createAssignmentModal'), width: '100%' });
+            $('#templates').select2({ dropdownParent: $('#createAssignmentModal'), width: '100%', placeholder: 'Seleccione una o varias plantillas...' });
+            
             $('#edit-client, #edit-service, #edit-users, #edit-status').select2({ dropdownParent: $('#editAssignmentModal'), width: '100%' });
+            $('#edit-templates').select2({ dropdownParent: $('#editAssignmentModal'), width: '100%', placeholder: 'Seleccione una o varias plantillas...' });
 
             $("#createStatusForm").on("submit", function(e) {
                 e.preventDefault();
@@ -77,7 +81,8 @@
                     client: $('#client').val(),
                     status: $('#status').val(),
                     assignedDate: combinedDateTime.toISOString(),
-                    address: $('#address').val()
+                    address: $('#address').val(),
+                    assignedForms: $('#templates').val()
                 };
                 $.ajax({
                     url: '@Url.Action("CreateAssignment", "Home")',
@@ -91,6 +96,7 @@
                             var clientText = clientMap[newAssignment.client] || "Cliente Desconocido";
                             var serviceText = serviceMap[newAssignment.service] || "Servicio Desconocido";
                             var usersText = newAssignment.users.map(userId => userMap[userId] || "Usuario Desconocido");
+                            var assignedTemplateIds = newAssignment.assignedTemplateIds || newAssignment.assignedForms || newAssignment.AssignedForms || [];
 
                             calendar.addEvent({
                                 id: newAssignment.id,
@@ -104,13 +110,14 @@
                                     status: statusText,
                                     checkIn: newAssignment.checkIn,
                                     checkOut: newAssignment.checkOut,
-                                    createdByUser: newAssignment.createdByUser
+                                    createdByUser: newAssignment.createdByUser,
+                                    assignedTemplateIds: assignedTemplateIds
                                 }
                             });
                             
                             $('#createAssignmentModal').modal('hide');
                             $("#createAssignmentForm")[0].reset();
-                            $('#client, #service, #users, #status').val(null).trigger('change');
+                            $('#client, #service, #users, #status, #templates').val(null).trigger('change');
                             showNotification("Asignación creada exitosamente.", 'success');
                         } else {
                             showNotification(response.message, 'error');
@@ -135,7 +142,8 @@
                     client: $('#edit-client').val(),
                     status: $('#edit-status').val(),
                     assignedDate: combinedDateTime.toISOString(),
-                    address: $('#edit-address').val()
+                    address: $('#edit-address').val(),
+                    assignedForms: $('#edit-templates').val()
                 };
 
                 $.ajax({
@@ -155,8 +163,9 @@
                             var newClientText = clientMap[assignmentData.client] || "Cliente Desconocido";
                             var newServiceText = serviceMap[assignmentData.service] || "Servicio Desconocido";
                             var newUsersText = assignmentData.users.map(userId => userMap[userId] || "Usuario Desconocido");
+                            var assignedTemplateIds = updatedAssignment.assignedTemplateIds || updatedAssignment.assignedForms || updatedAssignment.AssignedForms || [];
 
-                            calendar.addEvent({
+                            var newEvent = calendar.addEvent({
                                 id: updatedAssignment.id,
                                 title: newStatusText,
                                 start: updatedAssignment.assignedDate,
@@ -168,9 +177,15 @@
                                     status: newStatusText,
                                     checkIn: updatedAssignment.checkIn,
                                     checkOut: updatedAssignment.checkOut,
-                                    createdByUser: updatedAssignment.createdByUser
+                                    createdByUser: updatedAssignment.createdByUser,
+                                    assignedTemplateIds: assignedTemplateIds
                                 }
                             });
+                            
+                            // Explicitly set for safety as requested, though addEvent handles it.
+                            if(newEvent) {
+                                newEvent.setExtendedProp('assignedTemplateIds', assignedTemplateIds);
+                            }
                             
                             $('#editAssignmentModal').modal('hide');
                             showNotification("Asignación actualizada exitosamente.", 'success');
@@ -286,7 +301,24 @@
                         var ci = formatToLocalDateTime(props.checkIn);
                         var co = formatToLocalDateTime(props.checkOut);
 
-                        var userList = props.users && props.users.length > 0 ? '<ul>' + props.users.map(u => `<li>${u}</li>`).join('') + '</ul>' : '<p>No hay técnicos asignados.</p>';
+                        var userList = props.users && props.users.length > 0 ? '<ul>' + props.users.map(u => `<li>${u}</li>`).join('') + '</ul>' : '<p class="text-muted fst-italic">No hay técnicos asignados.</p>';
+                        
+                        var assignedTemplatesHtml = '<p class="text-muted fst-italic">No hay plantillas asignadas.</p>';
+                        // Robust check for various potential property names
+                        var tIds = props.assignedTemplateIds || props.assignedForms || props.AssignedForms || [];
+                        
+                        if (tIds && tIds.length > 0) {
+                            var listItems = tIds.map(tid => {
+                                // Robust lookup: try direct ID, stringified ID, or fallback
+                                var name = templateMap[tid] || templateMap[String(tid)] || "Plantilla Desconocida";
+                                return `<li>${name}</li>`;
+                            }).join('');
+                            assignedTemplatesHtml = `<ul>${listItems}</ul>`;
+                        } else if (props.assignedTemplates && props.assignedTemplates.length > 0) {
+                             // Fallback for legacy support if needed
+                             assignedTemplatesHtml = '<ul>' + props.assignedTemplates.map(t => `<li>${t}</li>`).join('') + '</ul>';
+                        }
+
                         var bodyContent = `<p><strong><i class="fas fa-user-tie me-2"></i>Cliente:</strong> ${props.client}</p>
                                            <p><strong><i class="fas fa-concierge-bell me-2"></i>Servicio:</strong> ${props.service}</p>
                                            <p><strong><i class="fas fa-map-marker-alt me-2"></i>Dirección:</strong> ${props.address}</p><hr/>
@@ -318,6 +350,7 @@
                                                 </div>
                                            </div>
                                            <p><strong><i class="fas fa-user-plus me-2"></i>Creado por:</strong> ${userMap[props.createdByUser] || 'No registrado'}</p><hr/>
+                                           <p><strong><i class="fas fa-clipboard-list me-2"></i>Plantillas Asignadas:</strong></p>${assignedTemplatesHtml}
                                            <p><strong><i class="fas fa-users me-2"></i>Técnicos Asignados:</strong></p>${userList}`;
                         modal.find('.modal-body').html(bodyContent);
                         modal.modal('show');
@@ -347,6 +380,7 @@
                     $('#edit-users').val(data.users).trigger('change');
                     $('#edit-status').val(data.status).trigger('change');
                     $('#edit-address').val(data.address);
+                    $('#edit-templates').val(data.assignedTemplateIds || data.assignedForms).trigger('change');
                     
                     var date = new Date(data.assignedDate);
                     var year = date.getFullYear();
@@ -467,6 +501,13 @@
                             </select>
                         </div>
                         <div class="mb-3">
+                            <label for="edit-templates" class="form-label"><i class="fas fa-clipboard-list me-2 text-secondary"></i>Plantillas de Formulario</label>
+                            <select id="edit-templates" name="templates" class="form-select" multiple>
+                                @foreach (var template in Model.FormTemplates) { <option value="@template.Id">@template.Name</option> }
+                            </select>
+                            <div class="form-text text-muted">Puede seleccionar una o más plantillas.</div>
+                        </div>
+                        <div class="mb-3">
                             <label for="edit-address" class="form-label"><i class="fas fa-map-marker-alt me-2 text-secondary"></i>Dirección</label>
                             <input type="text" id="edit-address" name="address" class="form-control" required />
                         </div>
@@ -546,6 +587,13 @@
                             <select id="users" name="users" class="form-select" multiple required>
                                 @foreach (var user in Model.Users) { <option value="@user.Id">@user.FullName</option> }
                             </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="templates" class="form-label"><i class="fas fa-clipboard-list me-2 text-secondary"></i>Plantillas de Formulario</label>
+                            <select id="templates" name="templates" class="form-select" multiple>
+                                @foreach (var template in Model.FormTemplates) { <option value="@template.Id">@template.Name</option> }
+                            </select>
+                            <div class="form-text text-muted">Puede seleccionar una o más plantillas.</div>
                         </div>
                         <div class="mb-3">
                             <label for="address" class="form-label"><i class="fas fa-map-marker-alt me-2 text-secondary"></i>Dirección</label>

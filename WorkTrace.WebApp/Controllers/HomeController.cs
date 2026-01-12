@@ -12,6 +12,7 @@ using WorkTrace.WebApp.Models.Dtos.Status;
 using WorkTrace.WebApp.Models.Dtos.Users;
 using WorkTrace.WebApp.Services.Interfaces;
 using WorkTrace.WebApp.Helpers;
+using Newtonsoft.Json.Linq;
 
 namespace WorkTrace.WebApp.Controllers;
 
@@ -97,36 +98,45 @@ public class HomeController : Controller
             var clientsTask = _clientApiService.GetAllAsync();
             var servicesTask = _serviceApiService.GetAllAsync();
             var statusesTask = _statusApiService.GetAllAsync();
+            var templatesTask = _formTemplateApiService.GetAllAsync();
 
-            await Task.WhenAll(assignmentsTask, usersTask, clientsTask, servicesTask, statusesTask);
+            await Task.WhenAll(assignmentsTask, usersTask, clientsTask, servicesTask, statusesTask, templatesTask);
 
             var assignments = assignmentsTask.Result ?? new List<AssignmentResponse>();
             var allUsers = usersTask.Result ?? new List<UserInformationResponse>();
             var clients = clientsTask.Result ?? new List<ClientInformationResponse>();
             var services = servicesTask.Result ?? new List<ServiceInformationResponse>();
             var statuses = statusesTask.Result ?? new List<StatusInformationResponse>();
+            var templates = templatesTask.Result ?? new List<WorkTrace.WebApp.Models.Dtos.FormTemplate.FormTemplateResponse>();
 
             var userDict = allUsers.ToDictionary(u => u.Id, u => u.FullName);
             var clientDict = clients.ToDictionary(c => c.Id, c => c.FullName);
             var serviceDict = services.ToDictionary(s => s.Id, s => s.Name);
             var statusDict = statuses.ToDictionary(s => s.Id, s => s.Name);
+            var activeTemplates = templates.Where(t => t.IsActive).ToList();
+            var templateDict = activeTemplates.ToDictionary(t => t.Id, t => t.Name);
 
-            var calendarEvents = assignments.Select(a => new
-            {
-                id = a.Id,
-                title = statusDict.GetValueOrDefault(a.Status, "Estado Desconocido"),
-                start = a.AssignedDate,
-                extendedProps = new
+            var calendarEvents = assignments.Select(a => {
+                var formIds = ParseAssignedForms(a.AssignedForms);
+                return new
                 {
-                    client = clientDict.GetValueOrDefault(a.Client, "Cliente Desconocido"),
-                    service = serviceDict.GetValueOrDefault(a.Service, "Servicio Desconocido"),
-                    users = a.Users.Select(userId => userDict.GetValueOrDefault(userId, "Usuario Desconocido")).ToList(),
-                    address = a.Address,
-                    status = statusDict.GetValueOrDefault(a.Status, "Estado Desconocido"),
-                    checkIn = a.CheckIn,
-                    checkOut = a.CheckOut,
-                    createdByUser = a.CreatedByUser
-                }
+                    id = a.Id,
+                    title = statusDict.GetValueOrDefault(a.Status, "Estado Desconocido"),
+                    start = a.AssignedDate,
+                    extendedProps = new
+                    {
+                        client = clientDict.GetValueOrDefault(a.Client, "Cliente Desconocido"),
+                        service = serviceDict.GetValueOrDefault(a.Service, "Servicio Desconocido"),
+                        users = a.Users.Select(userId => userDict.GetValueOrDefault(userId, "Usuario Desconocido")).ToList(),
+                        address = a.Address,
+                        status = statusDict.GetValueOrDefault(a.Status, "Estado Desconocido"),
+                        checkIn = a.CheckIn,
+                        checkOut = a.CheckOut,
+                        createdByUser = a.CreatedByUser,
+                        assignedTemplates = formIds.Select(tid => templateDict.GetValueOrDefault(tid, "Plantilla Desconocida")).ToList(),
+                        assignedTemplateIds = formIds
+                    }
+                };
             }).ToList();
 
             var activeUsers = allUsers.Where(u => u.IsActive).ToList();
@@ -138,11 +148,13 @@ public class HomeController : Controller
                 Clients = clients,
                 Services = services,
                 Statuses = statuses,
+                FormTemplates = activeTemplates,
                 LoggedInUserId = GetUserIdFromSession(),
                 UsersJson = JsonSerializer.Serialize(userDict, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }),
                 ClientsJson = JsonSerializer.Serialize(clientDict, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }),
                 ServicesJson = JsonSerializer.Serialize(serviceDict, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }),
-                StatusesJson = JsonSerializer.Serialize(statusDict, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
+                StatusesJson = JsonSerializer.Serialize(statusDict, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }),
+                FormTemplatesJson = JsonSerializer.Serialize(templateDict, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
             };
 
             return View(viewModel);
@@ -179,7 +191,23 @@ public class HomeController : Controller
             {
                 return Json(new { success = false, message = "La API no devolvió una asignación creada." });
             }
-            return Json(new { success = true, data = result });
+            return Json(new { 
+                success = true, 
+                data = new {
+                    id = result.Id,
+                    users = result.Users,
+                    service = result.Service,
+                    client = result.Client,
+                    status = result.Status,
+                    assignedDate = result.AssignedDate,
+                    address = result.Address,
+                    destinationLocation = result.DestinationLocation,
+                    createdByUser = result.CreatedByUser,
+                    checkIn = result.CheckIn,
+                    checkOut = result.CheckOut,
+                    assignedTemplateIds = ParseAssignedForms(result.AssignedForms)
+                }
+            });
         }
         catch (Exception ex)
         {
@@ -200,12 +228,44 @@ public class HomeController : Controller
 
         try
         {
-            var result = await _assignmentApiService.UpdateAsync(id, request);
-            if (result == null)
+            // Fetch current state to calculate delta
+            var currentAssignment = await _assignmentApiService.GetByIdAsync(id);
+            if (currentAssignment != null && request.AssignedForms != null)
+            {
+                var currentFormIds = currentAssignment.AssignedForms?.Select(x => x.Id).ToList() ?? new List<string>();
+                var newFormIds = request.AssignedForms;
+
+                request.AddForms = newFormIds.Except(currentFormIds).ToList();
+                request.RemoveForms = currentFormIds.Except(newFormIds).ToList();
+            }
+
+            var updateResult = await _assignmentApiService.UpdateAsync(id, request);
+            if (updateResult == null)
             {
                 return Json(new { success = false, message = "La API no devolvió un resultado exitoso." });
             }
-            return Json(new { success = true, data = result });
+
+            // Re-fetch to ensure all relationships/IDs are fresh
+            var result = await _assignmentApiService.GetByIdAsync(id);
+            if (result == null) result = updateResult;
+
+            return Json(new { 
+                success = true, 
+                data = new {
+                    id = result.Id,
+                    users = result.Users,
+                    service = result.Service,
+                    client = result.Client,
+                    status = result.Status,
+                    assignedDate = result.AssignedDate,
+                    address = result.Address,
+                    destinationLocation = result.DestinationLocation,
+                    createdByUser = result.CreatedByUser,
+                    checkIn = result.CheckIn,
+                    checkOut = result.CheckOut,
+                    assignedTemplateIds = ParseAssignedForms(result.AssignedForms)
+                }
+            });
         }
         catch (Exception ex)
         {
@@ -225,7 +285,20 @@ public class HomeController : Controller
             {
                 return NotFound();
             }
-            return Json(assignment);
+            return Json(new {
+                id = assignment.Id,
+                users = assignment.Users,
+                service = assignment.Service,
+                client = assignment.Client,
+                status = assignment.Status,
+                assignedDate = assignment.AssignedDate,
+                address = assignment.Address,
+                destinationLocation = assignment.DestinationLocation,
+                createdByUser = assignment.CreatedByUser,
+                checkIn = assignment.CheckIn,
+                checkOut = assignment.CheckOut,
+                assignedTemplateIds = ParseAssignedForms(assignment.AssignedForms)
+            });
         }
         catch
         {
@@ -367,5 +440,92 @@ public class HomeController : Controller
     public IActionResult Error()
     {
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+    }
+
+    private List<string> ParseAssignedForms(object? assignedFormsData)
+    {
+        if (assignedFormsData == null) return new List<string>();
+
+        var result = new List<string>();
+
+        try
+        {
+            if (assignedFormsData is JsonElement element)
+            {
+                if (element.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var item in element.EnumerateArray())
+                    {
+                        if (item.ValueKind == JsonValueKind.String)
+                        {
+                            result.Add(item.GetString() ?? "");
+                        }
+                        else if (item.ValueKind == JsonValueKind.Object)
+                        {
+                            // Try "Id", "id", "ID"
+                            if (item.TryGetProperty("Id", out var idProp) || item.TryGetProperty("id", out idProp) || item.TryGetProperty("ID", out idProp))
+                            {
+                                result.Add(idProp.GetString() ?? "");
+                            }
+                        }
+                    }
+                }
+            }
+            else if (assignedFormsData is JArray jArray)
+            {
+                foreach (var item in jArray)
+                {
+                    if (item.Type == JTokenType.String)
+                    {
+                        result.Add(item.ToString());
+                    }
+                    else if (item.Type == JTokenType.Object)
+                    {
+                        var id = item["Id"]?.ToString() ?? item["id"]?.ToString() ?? item["ID"]?.ToString();
+                        if (id != null) result.Add(id);
+                    }
+                }
+            }
+            else if (assignedFormsData is IEnumerable<string> strList)
+            {
+                result.AddRange(strList);
+            }
+            else if (assignedFormsData is IEnumerable<AssignedFormResponse> objList)
+            {
+                result.AddRange(objList.Select(x => x.Id));
+            }
+            // Fallback for when the object is deserialized but structure is unknown (e.g. List<object>)
+            else 
+            {
+                 // Attempt serialization/deserialization as a safe fallback
+                 try 
+                 {
+                     var json = JsonSerializer.Serialize(assignedFormsData);
+                     using (var doc = JsonDocument.Parse(json))
+                     {
+                         if(doc.RootElement.ValueKind == JsonValueKind.Array)
+                         {
+                             foreach(var item in doc.RootElement.EnumerateArray())
+                             {
+                                if (item.ValueKind == JsonValueKind.String)
+                                    result.Add(item.GetString() ?? "");
+                                else if (item.ValueKind == JsonValueKind.Object)
+                                {
+                                     if (item.TryGetProperty("Id", out var idProp) || item.TryGetProperty("id", out idProp))
+                                        result.Add(idProp.GetString() ?? "");
+                                }
+                             }
+                         }
+                     }
+                 } 
+                 catch {}
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error parsing assigned forms");
+        }
+
+        return result;
     }
 }
