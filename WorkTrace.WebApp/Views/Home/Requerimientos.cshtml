@@ -1,0 +1,514 @@
+@model List<WorkTrace.WebApp.Models.Dtos.TakenRequirement.TakenRequirementResponse>
+
+@{
+    ViewData["Title"] = "Requerimientos";
+}
+
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Indie+Flower&display=swap');
+
+    body {
+        background-color: #f0f2f5;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .corkboard-container {
+        background-image: url('https://www.transparenttextures.com/patterns/cork-board.png');
+        background-color: #d1bfa7;
+        box-shadow: inset 0 0 20px rgba(0,0,0,0.3);
+        border: 10px solid #8B4513;
+        border-radius: 5px;
+        min-height: 80vh;
+        height: auto; /* Allow growth */
+        padding: 40px;
+        padding-bottom: 80px; /* Extra space for bottom notes */
+        position: relative;
+    }
+
+    .corkboard-header {
+        background: rgba(255, 255, 255, 0.9);
+        padding: 15px 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        margin-bottom: 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+        z-index: 200; /* Ensure header is always on top */
+        position: relative;
+    }
+
+    .header-title {
+        font-family: 'Indie Flower', cursive;
+        font-size: 2rem;
+        font-weight: bold;
+        color: #333;
+        margin: 0;
+    }
+
+    .filter-controls {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    /* Hardened Grid Layout */
+    .notes-grid {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: flex-start; /* Prevents vertical stretching */
+        gap: 30px; /* Generous gap */
+    }
+
+    .post-it {
+        background-color: #fef3c7;
+        width: 280px;
+        height: 280px; /* Fixed Dimensions for Uniformity */
+        padding: 20px;
+        box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+        font-family: 'Indie Flower', cursive;
+        color: #333;
+        position: relative;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        z-index: 1; /* Default Layer */
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        /* Prevent selection during drag/interaction */
+        user-select: none;
+    }
+
+    .post-it:hover {
+        transform: scale(1.1) rotate(0deg) !important; /* Pop and Straighten */
+        box-shadow: 15px 15px 30px rgba(0,0,0,0.4);
+        z-index: 100 !important; /* Critical: Bring to Front */
+    }
+
+    .post-it::before {
+        content: '';
+        position: absolute;
+        top: -15px;
+        left: 50%;
+        width: 120px;
+        height: 35px;
+        background-color: rgba(255, 255, 255, 0.4);
+        border: 1px solid rgba(0,0,0,0.05);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        transform: translateX(-50%) rotate(-1deg);
+    }
+
+    .post-it-pin {
+        position: absolute;
+        top: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 30% 30%, #ef4444, #991b1b);
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+        z-index: 5;
+    }
+
+    .post-it-date {
+        font-size: 0.9rem;
+        color: #666;
+        text-align: right;
+        margin-bottom: 10px;
+        border-bottom: 1px dashed #d1d5db;
+        padding-bottom: 5px;
+    }
+
+    .post-it-title {
+        font-size: 1.4rem;
+        font-weight: bold;
+        margin-bottom: 10px;
+        line-height: 1.2;
+        /* Limit title lines if needed, but let it flow for now */
+    }
+
+    .post-it-body {
+        font-size: 1.1rem;
+        flex-grow: 1;
+        overflow-y: auto; /* Contain massive text */
+        max-height: 160px; /* Safety cap derived from 280px total height */
+        padding-right: 5px; /* Space for scrollbar */
+        
+        /* Custom Scrollbar for aesthetic */
+        scrollbar-width: thin;
+        scrollbar-color: #d1d5db transparent;
+    }
+
+    /* Webkit Scrollbar */
+    .post-it-body::-webkit-scrollbar {
+        width: 6px;
+    }
+    .post-it-body::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .post-it-body::-webkit-scrollbar-thumb {
+        background-color: rgba(0,0,0,0.1);
+        border-radius: 10px;
+    }
+
+    .post-it-footer {
+        margin-top: auto; /* Push to bottom */
+        padding-top: 10px;
+        display: flex;
+        justify-content: flex-end;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .post-it:hover .post-it-footer {
+        opacity: 1;
+    }
+
+    .btn-edit-note {
+        background: none;
+        border: none;
+        color: #4b5563;
+        cursor: pointer;
+        padding: 5px;
+        font-size: 1.2rem;
+    }
+
+    .btn-edit-note:hover {
+        color: #1f2937;
+        transform: scale(1.1);
+    }
+
+    /* Random rotations for authentic look */
+    .post-it:nth-child(odd) { transform: rotate(2deg); }
+    .post-it:nth-child(even) { transform: rotate(-1.5deg); }
+    .post-it:nth-child(3n) { transform: rotate(1deg); }
+    .post-it:nth-child(4n) { transform: rotate(-2.5deg); }
+    .post-it:nth-child(5n) { transform: rotate(1.5deg); }
+
+    /* Post-it colors variants */
+    .post-it.yellow { background-color: #fef3c7; }
+    .post-it.blue { background-color: #dbeafe; }
+    .post-it.green { background-color: #d1fae5; }
+    .post-it.pink { background-color: #fce7f3; }
+
+    .modal-content {
+        border-radius: 16px;
+        border: none;
+    }
+    
+    .modal-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e5e7eb;
+        border-radius: 16px 16px 0 0;
+    }
+
+    .form-control, .form-select {
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+    }
+</style>
+
+<div class="corkboard-container">
+    <div class="corkboard-header">
+        <h2 class="header-title">Tablero de Requerimientos <i class="fas fa-thumbtack text-danger ms-2"></i></h2>
+        
+        <div class="filter-controls">
+            <select id="monthFilter" class="form-select form-select-sm" style="width: auto;">
+                <option value="">Todos los Meses</option>
+                <option value="1">Enero</option>
+                <option value="2">Febrero</option>
+                <option value="3">Marzo</option>
+                <option value="4">Abril</option>
+                <option value="5">Mayo</option>
+                <option value="6">Junio</option>
+                <option value="7">Julio</option>
+                <option value="8">Agosto</option>
+                <option value="9">Septiembre</option>
+                <option value="10">Octubre</option>
+                <option value="11">Noviembre</option>
+                <option value="12">Diciembre</option>
+            </select>
+            
+            <button class="btn btn-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#createModal">
+                <i class="fas fa-plus"></i> Nuevo
+            </button>
+        </div>
+    </div>
+
+    <div class="notes-grid" id="notesContainer">
+        @foreach (var item in Model)
+        {
+            <div class="post-it" data-id="@item.Id" data-client-id="@item.ClientId" data-iso-date="@item.Date.ToString("O")">
+                <div class="post-it-pin"></div>
+                <div class="post-it-date">@item.Date.ToString("dd MMM yyyy")</div>
+                <div class="post-it-title">@item.Title</div>
+                <div class="post-it-body">@item.Description</div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Create Modal -->
+<div class="modal fade" id="createModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Nuevo Requerimiento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createForm">
+                    <input type="hidden" id="createUserId" value="@ViewBag.CurrentUserId" />
+                    
+                    <div class="mb-3">
+                        <label for="createClientId" class="form-label fw-medium">Cliente</label>
+                        <select class="form-select" id="createClientId" required>
+                            <option value="">Seleccione un cliente...</option>
+                            @if (ViewBag.Clients != null)
+                            {
+                                foreach (var client in ViewBag.Clients)
+                                {
+                                    <option value="@client.Id">@client.FullName</option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="createTitle" class="form-label fw-medium">Título</label>
+                        <input type="text" class="form-control" id="createTitle" required placeholder="Resumen corto...">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="createDescription" class="form-label fw-medium">Descripción</label>
+                        <textarea class="form-control" id="createDescription" rows="4" required placeholder="Detalles del requerimiento..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light text-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="submitCreate()">Guardar Nota</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal Injected -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Editar Requerimiento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <input type="hidden" id="editId" />
+                    
+                    <div class="mb-3">
+                        <label for="editClientId" class="form-label fw-medium">Cliente</label>
+                        <select class="form-select" id="editClientId" required>
+                            <option value="">Seleccione un cliente...</option>
+                            @if (ViewBag.Clients != null)
+                            {
+                                foreach (var client in ViewBag.Clients)
+                                {
+                                    <option value="@client.Id">@client.FullName</option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editTitle" class="form-label fw-medium">Título</label>
+                        <input type="text" class="form-control" id="editTitle" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editDescription" class="form-label fw-medium">Descripción</label>
+                        <textarea class="form-control" id="editDescription" rows="4" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light text-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="submitEdit()">Actualizar Nota</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Edit Logic Injected
+        document.addEventListener('DOMContentLoaded', function() {
+            // Randomize note colors and Inject Edit Icon
+            const colors = ['yellow', 'blue', 'green', 'pink'];
+            
+            $('.post-it').each(function() {
+                const $note = $(this);
+
+                // --- Local Time Logic ---
+                const isoDate = $note.attr('data-iso-date');
+                if (isoDate) {
+                    const date = new Date(isoDate);
+                    if (!isNaN(date.getTime())) {
+                        // 1. Update Display Date (e.g., "15 Ene 2026")
+                        // Using Intl.DateTimeFormat for robust local conversion (like in CalendarioActividades)
+                        const displayDate = new Intl.DateTimeFormat('es-ES', { 
+                            day: 'numeric', 
+                            month: 'short', 
+                            year: 'numeric' 
+                        }).format(date);
+                        
+                        $note.find('.post-it-date').text(displayDate);
+
+                        // 2. Update Filter Date Attribute (yyyy-MM-dd) for the Month Filter
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        $note.attr('data-date', `${year}-${month}-${day}`);
+                    }
+                }
+                // -----------------------------
+                
+                // Random Color
+                const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                $note.addClass(randomColor);
+
+                // Inject Edit Icon (Discreet pencil)
+                const $footer = $('<div class="post-it-footer"></div>');
+                // Replaced bi bi-pencil-fill with fas fa-pen
+                const $editBtn = $('<button class="btn-edit-note" title="Editar"><i class="fas fa-pen"></i></button>');
+                
+                $editBtn.on('click', function(e) {
+                    e.stopPropagation(); // Prevent triggering note click if any
+                    openEditModal($note);
+                });
+
+                $footer.append($editBtn);
+                $note.append($footer);
+            });
+
+            // Filter Logic
+            $('#monthFilter').on('change', function() {
+                const selectedMonth = $(this).val();
+                
+                $('.post-it').each(function() {
+                    const $note = $(this);
+                    if (selectedMonth === "") {
+                        $note.css('display', 'flex');
+                    } else {
+                        const dateStr = $note.attr('data-date'); // yyyy-MM-dd
+                        if (!dateStr) return;
+                        
+                        const month = parseInt(dateStr.split('-')[1]);
+                        
+                        if (month.toString() === selectedMonth) {
+                            $note.css('display', 'flex');
+                        } else {
+                            $note.css('display', 'none');
+                        }
+                    }
+                });
+            });
+        });
+
+        function submitCreate() {
+            const userId = $('#createUserId').val();
+            const clientId = $('#createClientId').val();
+            const title = $('#createTitle').val();
+            const description = $('#createDescription').val();
+
+            if (!clientId || !title || !description) {
+                Swal.fire('Error', 'Por favor complete todos los campos', 'warning');
+                return;
+            }
+
+            const data = {
+                userId: userId,
+                clientId: clientId,
+                title: title,
+                description: description
+            };
+
+            $.ajax({
+                url: '/Home/CreateTakenRequirement',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(res) {
+                    if (res.success) {
+                        Swal.fire('Éxito', 'Nota creada correctamente', 'success').then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire('Error', res.message, 'error');
+                    }
+                },
+                error: function() {
+                    Swal.fire('Error', 'Error de conexión', 'error');
+                }
+            });
+        }
+
+        function openEditModal($note) {
+            // Extract data
+            const id = $note.attr('data-id');
+            const clientId = $note.attr('data-client-id');
+            const title = $note.find('.post-it-title').text();
+            const description = $note.find('.post-it-body').text();
+
+            // Populate Modal
+            $('#editId').val(id);
+            $('#editClientId').val(clientId);
+            $('#editTitle').val(title);
+            $('#editDescription').val(description);
+
+            // Show Modal
+            const modal = new bootstrap.Modal(document.getElementById('editModal'));
+            modal.show();
+        }
+
+        function submitEdit() {
+            const id = $('#editId').val();
+            const clientId = $('#editClientId').val();
+            const title = $('#editTitle').val();
+            const description = $('#editDescription').val();
+
+            if (!clientId || !title || !description) {
+                Swal.fire('Error', 'Por favor complete todos los campos', 'warning');
+                return;
+            }
+
+            const data = {
+                id: id,
+                clientId: clientId,
+                title: title,
+                description: description
+            };
+
+            $.ajax({
+                url: '/TakenRequirements/Update',
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(res) {
+                    if (res.success) {
+                        Swal.fire('Éxito', 'Nota actualizada correctamente', 'success').then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire('Error', res.message, 'error');
+                    }
+                },
+                error: function() {
+                    Swal.fire('Error', 'Error de conexión', 'error');
+                }
+            });
+        }
+    </script>
+}

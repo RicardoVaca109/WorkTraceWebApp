@@ -26,6 +26,7 @@ public class HomeController : Controller
     private readonly IServiceApiService _serviceApiService;
     private readonly IStatusApiService _statusApiService;
     private readonly IFormTemplateApiService _formTemplateApiService;
+    private readonly ITakenRequirementApiService _takenRequirementApiService;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
 
@@ -37,6 +38,7 @@ public class HomeController : Controller
         IServiceApiService serviceApiService,
         IStatusApiService statusApiService,
         IFormTemplateApiService formTemplateApiService,
+        ITakenRequirementApiService takenRequirementApiService,
         IHttpContextAccessor httpContextAccessor)
     {
         _logger = logger;
@@ -46,6 +48,7 @@ public class HomeController : Controller
         _serviceApiService = serviceApiService;
         _statusApiService = statusApiService;
         _formTemplateApiService = formTemplateApiService;
+        _takenRequirementApiService = takenRequirementApiService;
         _httpContextAccessor = httpContextAccessor;
     }
 
@@ -164,6 +167,74 @@ public class HomeController : Controller
             _logger.LogError(ex, "Error loading data for CalendarioActividades");
             TempData["Error"] = "Error al cargar los datos del calendario.";
             return View(new CalendarioActividadesViewModel { EventsJson = "[]" });
+        }
+    }
+
+    public async Task<IActionResult> Requerimientos()
+    {
+        var requirementsTask = _takenRequirementApiService.GetAllAsync();
+        var clientsTask = _clientApiService.GetAllAsync();
+
+        await Task.WhenAll(requirementsTask, clientsTask);
+
+        var requirements = requirementsTask.Result ?? new List<WorkTrace.WebApp.Models.Dtos.TakenRequirement.TakenRequirementResponse>();
+        var clients = clientsTask.Result ?? new List<ClientInformationResponse>();
+        
+        ViewBag.Clients = clients;
+        ViewBag.CurrentUserId = GetUserIdFromSession();
+
+        return View(requirements);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateTakenRequirement([FromBody] WorkTrace.WebApp.Models.Dtos.TakenRequirement.CreateTakenRequirementRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+            return Json(new { success = false, message = "Datos inválidos: " + string.Join(", ", errors) });
+        }
+
+        try
+        {
+            var result = await _takenRequirementApiService.CreateAsync(request);
+            if (result == null)
+            {
+                return Json(new { success = false, message = "La API no devolvió un requerimiento creado." });
+            }
+            return Json(new { success = true, data = result });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating requirement");
+            return Json(new { success = false, message = "No se pudo crear el requerimiento." });
+        }
+    }
+
+    // Update Action Injected
+    [HttpPut]
+    [Route("TakenRequirements/Update")]
+    public async Task<IActionResult> UpdateTakenRequirement([FromBody] WorkTrace.WebApp.Models.Dtos.TakenRequirement.UpdateTakenRequirementRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+            return Json(new { success = false, message = "Datos inválidos: " + string.Join(", ", errors) });
+        }
+
+        try
+        {
+            var result = await _takenRequirementApiService.UpdateAsync(request.Id, request);
+            if (result == null)
+            {
+                return Json(new { success = false, message = "La API no devolvió un resultado exitoso." });
+            }
+            return Json(new { success = true, data = result });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating requirement");
+            return Json(new { success = false, message = "No se pudo actualizar el requerimiento." });
         }
     }
 

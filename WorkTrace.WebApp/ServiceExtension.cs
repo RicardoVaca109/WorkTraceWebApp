@@ -50,5 +50,10 @@ public static class ServiceExtension
         {
             client.BaseAddress = new Uri(apiBaseUrl);
         }).AddHttpMessageHandler<AuthTokenHandler>();
+
+        services.AddHttpClient<ITakenRequirementApiService, TakenRequirementApiService>(client =>
+        {
+            client.BaseAddress = new Uri(apiBaseUrl);
+        }).AddHttpMessageHandler<AuthTokenHandler>();
     }
 }
