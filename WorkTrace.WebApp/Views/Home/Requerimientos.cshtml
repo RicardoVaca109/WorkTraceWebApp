@@ -5,218 +5,291 @@
 }
 
 <style>
-    @@import url('https://fonts.googleapis.com/css2?family=Indie+Flower&display=swap');
+    @@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
     body {
-        background-color: #f0f2f5;
+        background-color: #f4f6f9;
         font-family: 'Inter', sans-serif;
+        color: #343a40;
     }
 
-    .corkboard-container {
-        background-image: url('https://www.transparenttextures.com/patterns/cork-board.png');
-        background-color: #d1bfa7;
-        box-shadow: inset 0 0 20px rgba(0,0,0,0.3);
-        border: 10px solid #8B4513;
-        border-radius: 5px;
-        min-height: 80vh;
-        height: auto; /* Allow growth */
+    .dashboard-container {
         padding: 40px;
-        padding-bottom: 80px; /* Extra space for bottom notes */
-        position: relative;
+        min-height: 85vh;
+        max-width: 1600px;
+        margin: 0 auto;
     }
 
-    .corkboard-header {
-        background: rgba(255, 255, 255, 0.9);
-        padding: 15px 25px;
-        border-radius: 8px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        margin-bottom: 40px;
+    .dashboard-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        flex-wrap: wrap;
+        margin-bottom: 40px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .header-title-group {
+        display: flex;
+        align-items: center;
         gap: 15px;
-        z-index: 200; /* Ensure header is always on top */
-        position: relative;
     }
 
     .header-title {
-        font-family: 'Indie Flower', cursive;
-        font-size: 2rem;
-        font-weight: bold;
-        color: #333;
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #212529;
         margin: 0;
+        letter-spacing: -0.5px;
+    }
+
+    .header-subtitle {
+        color: #6c757d;
+        font-size: 0.95rem;
+        margin-top: 5px;
+        font-weight: 400;
     }
 
     .filter-controls {
         display: flex;
-        gap: 10px;
+        gap: 12px;
         align-items: center;
     }
 
-    /* Hardened Grid Layout */
-    .notes-grid {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        align-items: flex-start; /* Prevents vertical stretching */
-        gap: 30px; /* Generous gap */
+    .form-select-custom {
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-size: 0.9rem;
+        color: #495057;
+        background-color: #fff;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        cursor: pointer;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
     }
 
-    .post-it {
-        background-color: #fef3c7;
-        width: 280px;
-        height: 280px; /* Fixed Dimensions for Uniformity */
-        padding: 20px;
-        box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
-        font-family: 'Indie Flower', cursive;
-        color: #333;
-        position: relative;
-        cursor: pointer;
+    .form-select-custom:focus {
+        border-color: #80bdff;
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+
+    .btn-create {
+        background-color: #0d6efd;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 8px 16px;
+        font-weight: 500;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: background-color 0.2s, box-shadow 0.2s;
+        box-shadow: 0 2px 4px rgba(13, 110, 253, 0.2);
+    }
+
+    .btn-create:hover {
+        background-color: #0b5ed7;
+        box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3);
+        color: white;
+    }
+
+    .btn-back {
+        border: 1px solid #ced4da;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        background-color: transparent;
+    }
+
+    .btn-back:hover {
+        background-color: #6c757d;
+        color: #ffffff;
+        border-color: #6c757d;
+    }
+
+    /* Grid Layout */
+    .cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 24px;
+    }
+
+    /* Info Card Design */
+    .info-card {
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        padding: 24px;
+        height: 260px; /* Fixed height for consistency */
         display: flex;
         flex-direction: column;
-        z-index: 1; /* Default Layer */
+        position: relative;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
-        /* Prevent selection during drag/interaction */
-        user-select: none;
+        border-left: 4px solid #dee2e6; /* Default border */
+        cursor: default;
+        overflow: hidden;
     }
 
-    .post-it:hover {
-        transform: scale(1.1) rotate(0deg) !important; /* Pop and Straighten */
-        box-shadow: 15px 15px 30px rgba(0,0,0,0.4);
-        z-index: 100 !important; /* Critical: Bring to Front */
+    .info-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.08);
     }
 
-    .post-it::before {
-        content: '';
-        position: absolute;
-        top: -15px;
-        left: 50%;
-        width: 120px;
-        height: 35px;
-        background-color: rgba(255, 255, 255, 0.4);
-        border: 1px solid rgba(0,0,0,0.05);
-        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        transform: translateX(-50%) rotate(-1deg);
+    /* Status Strip Colors */
+    .info-card.yellow { border-left-color: #f59e0b; } /* Warning/Orange */
+    .info-card.blue { border-left-color: #3b82f6; }   /* Primary/Blue */
+    .info-card.green { border-left-color: #10b981; }  /* Success/Green */
+    .info-card.pink { border-left-color: #ec4899; }   /* Accent/Pink */
+
+    .info-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
     }
 
-    .post-it-pin {
-        position: absolute;
-        top: -10px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        background: radial-gradient(circle at 30% 30%, #ef4444, #991b1b);
-        box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
-        z-index: 5;
+    .info-card-date {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #adb5bd;
+        font-weight: 600;
     }
 
-    .post-it-date {
-        font-size: 0.9rem;
-        color: #666;
-        text-align: right;
+    .info-card-title {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: #212529;
         margin-bottom: 10px;
-        border-bottom: 1px dashed #d1d5db;
-        padding-bottom: 5px;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 
-    .post-it-title {
-        font-size: 1.4rem;
-        font-weight: bold;
-        margin-bottom: 10px;
-        line-height: 1.2;
-        /* Limit title lines if needed, but let it flow for now */
-    }
-
-    .post-it-body {
-        font-size: 1.1rem;
+    .info-card-body {
+        font-size: 0.925rem;
+        color: #6c757d;
+        line-height: 1.6;
         flex-grow: 1;
-        overflow-y: auto; /* Contain massive text */
-        max-height: 160px; /* Safety cap derived from 280px total height */
-        padding-right: 5px; /* Space for scrollbar */
-        
-        /* Custom Scrollbar for aesthetic */
+        overflow-y: auto;
+        margin-bottom: 12px;
+        /* Custom Scrollbar */
         scrollbar-width: thin;
-        scrollbar-color: #d1d5db transparent;
+        scrollbar-color: #e9ecef transparent;
     }
 
-    /* Webkit Scrollbar */
-    .post-it-body::-webkit-scrollbar {
-        width: 6px;
+    .info-card-body::-webkit-scrollbar {
+        width: 4px;
     }
-    .post-it-body::-webkit-scrollbar-track {
+    .info-card-body::-webkit-scrollbar-track {
         background: transparent;
     }
-    .post-it-body::-webkit-scrollbar-thumb {
-        background-color: rgba(0,0,0,0.1);
-        border-radius: 10px;
+    .info-card-body::-webkit-scrollbar-thumb {
+        background-color: #e9ecef;
+        border-radius: 4px;
     }
 
-    .post-it-footer {
-        margin-top: auto; /* Push to bottom */
-        padding-top: 10px;
+    /* Footer / Edit Icon */
+    .info-card-footer {
+        margin-top: auto;
+        padding-top: 12px;
+        border-top: 1px solid #f8f9fa;
         display: flex;
         justify-content: flex-end;
-        opacity: 0;
-        transition: opacity 0.2s;
     }
 
-    .post-it:hover .post-it-footer {
-        opacity: 1;
-    }
-
-    .btn-edit-note {
+    .btn-edit-card {
         background: none;
         border: none;
-        color: #4b5563;
+        color: #adb5bd;
         cursor: pointer;
-        padding: 5px;
-        font-size: 1.2rem;
+        padding: 4px 8px;
+        font-size: 0.95rem;
+        transition: color 0.2s, background-color 0.2s;
+        border-radius: 4px;
     }
 
-    .btn-edit-note:hover {
-        color: #1f2937;
-        transform: scale(1.1);
+    .btn-edit-card:hover {
+        color: #495057;
+        background-color: #f8f9fa;
     }
 
-    /* Random rotations for authentic look */
-    .post-it:nth-child(odd) { transform: rotate(2deg); }
-    .post-it:nth-child(even) { transform: rotate(-1.5deg); }
-    .post-it:nth-child(3n) { transform: rotate(1deg); }
-    .post-it:nth-child(4n) { transform: rotate(-2.5deg); }
-    .post-it:nth-child(5n) { transform: rotate(1.5deg); }
-
-    /* Post-it colors variants */
-    .post-it.yellow { background-color: #fef3c7; }
-    .post-it.blue { background-color: #dbeafe; }
-    .post-it.green { background-color: #d1fae5; }
-    .post-it.pink { background-color: #fce7f3; }
-
+    /* Modal Styling for Consistency */
     .modal-content {
-        border-radius: 16px;
+        border-radius: 12px;
         border: none;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
     }
     
     .modal-header {
-        background-color: #f8f9fa;
-        border-bottom: 1px solid #e5e7eb;
-        border-radius: 16px 16px 0 0;
+        background-color: #fff;
+        border-bottom: 1px solid #f0f2f5;
+        padding: 24px;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .modal-title {
+        font-weight: 600;
+        color: #212529;
+    }
+
+    .modal-body {
+        padding: 24px;
+    }
+
+    .form-label {
+        font-weight: 500;
+        font-size: 0.9rem;
+        color: #495057;
+        margin-bottom: 6px;
     }
 
     .form-control, .form-select {
-        border-radius: 8px;
-        padding: 0.75rem 1rem;
+        border-radius: 6px;
+        border: 1px solid #dee2e6;
+        padding: 10px 12px;
+        font-size: 0.95rem;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+    }
+
+    .modal-footer {
+        padding: 16px 24px;
+        background-color: #f8f9fa;
+        border-top: 1px solid #f0f2f5;
+        border-radius: 0 0 12px 12px;
     }
 </style>
 
-<div class="corkboard-container">
-    <div class="corkboard-header">
-        <h2 class="header-title">Tablero de Requerimientos <i class="fas fa-thumbtack text-danger ms-2"></i></h2>
+<div class="dashboard-container">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="header-title-group">
+            <div>
+                <h2 class="header-title">Requerimientos</h2>
+                <div class="header-subtitle">Gestión y seguimiento de solicitudes</div>
+            </div>
+        </div>
         
         <div class="filter-controls">
-            <select id="monthFilter" class="form-select form-select-sm" style="width: auto;">
+            <a asp-action="Index" asp-controller="Home" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Volver al Panel Principal
+            </a>
+            <select id="monthFilter" class="form-select-custom">
                 <option value="">Todos los Meses</option>
                 <option value="1">Enero</option>
                 <option value="2">Febrero</option>
@@ -232,20 +305,22 @@
                 <option value="12">Diciembre</option>
             </select>
             
-            <button class="btn btn-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#createModal">
+            <button class="btn-create" data-bs-toggle="modal" data-bs-target="#createModal">
                 <i class="fas fa-plus"></i> Nuevo
             </button>
         </div>
     </div>
 
-    <div class="notes-grid" id="notesContainer">
+    <!-- Grid -->
+    <div class="cards-grid" id="notesContainer">
         @foreach (var item in Model)
         {
-            <div class="post-it" data-id="@item.Id" data-client-id="@item.ClientId" data-iso-date="@item.Date.ToString("O")">
-                <div class="post-it-pin"></div>
-                <div class="post-it-date">@item.Date.ToString("dd MMM yyyy")</div>
-                <div class="post-it-title">@item.Title</div>
-                <div class="post-it-body">@item.Description</div>
+            <div class="info-card" data-id="@item.Id" data-client-id="@item.ClientId" data-iso-date="@item.Date.ToString("O")">
+                <div class="info-card-header">
+                    <span class="info-card-date">@item.Date.ToString("dd MMM yyyy")</span>
+                </div>
+                <div class="info-card-title">@item.Title</div>
+                <div class="info-card-body">@item.Description</div>
             </div>
         }
     </div>
@@ -256,7 +331,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title fw-bold">Nuevo Requerimiento</h5>
+                <h5 class="modal-title">Nuevo Requerimiento</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -264,7 +339,7 @@
                     <input type="hidden" id="createUserId" value="@ViewBag.CurrentUserId" />
                     
                     <div class="mb-3">
-                        <label for="createClientId" class="form-label fw-medium">Cliente</label>
+                        <label for="createClientId" class="form-label">Cliente</label>
                         <select class="form-select" id="createClientId" required>
                             <option value="">Seleccione un cliente...</option>
                             @if (ViewBag.Clients != null)
@@ -278,19 +353,19 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="createTitle" class="form-label fw-medium">Título</label>
+                        <label for="createTitle" class="form-label">Título</label>
                         <input type="text" class="form-control" id="createTitle" required placeholder="Resumen corto...">
                     </div>
 
                     <div class="mb-3">
-                        <label for="createDescription" class="form-label fw-medium">Descripción</label>
+                        <label for="createDescription" class="form-label">Descripción</label>
                         <textarea class="form-control" id="createDescription" rows="4" required placeholder="Detalles del requerimiento..."></textarea>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-light text-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" onclick="submitCreate()">Guardar Nota</button>
+                <button type="button" class="btn btn-primary" onclick="submitCreate()">Guardar</button>
             </div>
         </div>
     </div>
@@ -301,7 +376,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title fw-bold">Editar Requerimiento</h5>
+                <h5 class="modal-title">Editar Requerimiento</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -309,7 +384,7 @@
                     <input type="hidden" id="editId" />
                     
                     <div class="mb-3">
-                        <label for="editClientId" class="form-label fw-medium">Cliente</label>
+                        <label for="editClientId" class="form-label">Cliente</label>
                         <select class="form-select" id="editClientId" required>
                             <option value="">Seleccione un cliente...</option>
                             @if (ViewBag.Clients != null)
@@ -323,19 +398,19 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="editTitle" class="form-label fw-medium">Título</label>
+                        <label for="editTitle" class="form-label">Título</label>
                         <input type="text" class="form-control" id="editTitle" required>
                     </div>
 
                     <div class="mb-3">
-                        <label for="editDescription" class="form-label fw-medium">Descripción</label>
+                        <label for="editDescription" class="form-label">Descripción</label>
                         <textarea class="form-control" id="editDescription" rows="4" required></textarea>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-light text-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" onclick="submitEdit()">Actualizar Nota</button>
+                <button type="button" class="btn btn-primary" onclick="submitEdit()">Actualizar</button>
             </div>
         </div>
     </div>
@@ -345,10 +420,11 @@
     <script>
         // Edit Logic Injected
         document.addEventListener('DOMContentLoaded', function() {
-            // Randomize note colors and Inject Edit Icon
+            // Randomize note colors (now status strips) and Inject Edit Icon
             const colors = ['yellow', 'blue', 'green', 'pink'];
             
-            $('.post-it').each(function() {
+            // Selector updated to .info-card (was .post-it)
+            $('.info-card').each(function() {
                 const $note = $(this);
 
                 // --- Local Time Logic ---
@@ -357,14 +433,14 @@
                     const date = new Date(isoDate);
                     if (!isNaN(date.getTime())) {
                         // 1. Update Display Date (e.g., "15 Ene 2026")
-                        // Using Intl.DateTimeFormat for robust local conversion (like in CalendarioActividades)
                         const displayDate = new Intl.DateTimeFormat('es-ES', { 
                             day: 'numeric', 
                             month: 'short', 
                             year: 'numeric' 
                         }).format(date);
                         
-                        $note.find('.post-it-date').text(displayDate);
+                        // Selector updated to .info-card-date (was .post-it-date)
+                        $note.find('.info-card-date').text(displayDate);
 
                         // 2. Update Filter Date Attribute (yyyy-MM-dd) for the Month Filter
                         const year = date.getFullYear();
@@ -375,17 +451,17 @@
                 }
                 // -----------------------------
                 
-                // Random Color
+                // Random Color (Now applies Left Border class)
                 const randomColor = colors[Math.floor(Math.random() * colors.length)];
                 $note.addClass(randomColor);
 
-                // Inject Edit Icon (Discreet pencil)
-                const $footer = $('<div class="post-it-footer"></div>');
-                // Replaced bi bi-pencil-fill with fas fa-pen
-                const $editBtn = $('<button class="btn-edit-note" title="Editar"><i class="fas fa-pen"></i></button>');
+                // Inject Edit Icon (Footer)
+                const $footer = $('<div class="info-card-footer"></div>');
+                // Replaced logic with new classes
+                const $editBtn = $('<button class="btn-edit-card" title="Editar"><i class="fas fa-pen"></i></button>');
                 
                 $editBtn.on('click', function(e) {
-                    e.stopPropagation(); // Prevent triggering note click if any
+                    e.stopPropagation(); // Prevent triggering click if any
                     openEditModal($note);
                 });
 
@@ -397,7 +473,8 @@
             $('#monthFilter').on('change', function() {
                 const selectedMonth = $(this).val();
                 
-                $('.post-it').each(function() {
+                // Selector updated to .info-card
+                $('.info-card').each(function() {
                     const $note = $(this);
                     if (selectedMonth === "") {
                         $note.css('display', 'flex');
@@ -416,6 +493,8 @@
                 });
             });
         });
+
+        // PRESERVED AJAX LOGIC -----------------------
 
         function submitCreate() {
             const userId = $('#createUserId').val();
@@ -459,8 +538,9 @@
             // Extract data
             const id = $note.attr('data-id');
             const clientId = $note.attr('data-client-id');
-            const title = $note.find('.post-it-title').text();
-            const description = $note.find('.post-it-body').text();
+            // Selectors updated to match new classes
+            const title = $note.find('.info-card-title').text();
+            const description = $note.find('.info-card-body').text();
 
             // Populate Modal
             $('#editId').val(id);
