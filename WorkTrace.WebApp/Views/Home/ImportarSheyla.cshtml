@@ -1,0 +1,283 @@
+@{
+    ViewData["Title"] = "Importar Datos Sheyla";
+}
+
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f3f4f6;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .btn-corporate {
+        background-color: #2563eb;
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.375rem;
+        font-weight: 500;
+        transition: background-color 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-corporate:hover {
+        background-color: #1d4ed8;
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-outline-corporate {
+        background-color: white;
+        color: #374151;
+        border: 1px solid #d1d5db;
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.375rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-outline-corporate:hover {
+        background-color: #f9fafb;
+        border-color: #9ca3af;
+        color: #374151;
+    }
+
+    .card-corporate {
+        background: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+        padding: 2rem;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .file-upload-icon {
+        width: 64px;
+        height: 64px;
+        color: #2563eb;
+        background-color: #eff6ff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem auto;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: #374151;
+        margin-bottom: 0.5rem;
+        text-align: center;
+    }
+
+    .form-control-corporate {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        font-size: 0.95rem;
+        color: #111827;
+        background-color: white;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+
+    .form-control-corporate:focus {
+        border-color: #2563eb;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+</style>
+
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-4">
+        <a asp-controller="Home" asp-action="Index" class="btn-outline-corporate">
+            &larr; Volver al Panel
+        </a>
+    </div>
+
+    <div class="text-center mb-8">
+        <h1 class="page-title mb-2">Importar Datos Sheyla</h1>
+        <p class="text-secondary">Carga el archivo Excel para actualizar el inventario.</p>
+    </div>
+
+    <div class="card-corporate">
+        <div class="file-upload-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+                <path d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.388-.13-.776.08-1.102.198-.307.526-.568.897-.787a7.68 7.68 0 0 1 3.798-.622 8.027 8.027 0 0 1 1.506.204.57.57 0 0 1 .428.572c.032.349-.23.626-.539.86-.282.218-.596.38-.928.487a5.553 5.553 0 0 1-2.253.19c-.538-.06-.982-.186-1.354-.343.106.6.575.889 1.145.926.345.022.655-.054.939-.172.28-.118.498-.27.653-.466l-.062-.119h.473c.276 0 .55.003.814.006.269.003.543 0 .814-.006h.473c-.15.197-.367.349-.646.467-.278.117-.58.193-.921.214-.636.04-1.163-.245-1.378-.832a.896.896 0 0 1-.026-.235zm4.89.024L9.432 14.06l-.939.438c-.187.091-.376.16-.566.208l-.09.015c-.245.034-.52.034-.813.003a2.748 2.748 0 0 1-.823-.206l-.09-.042a.533.533 0 0 1-.345-.478c-.041-.411.17-.766.552-1.034.354-.242.8-.448 1.299-.588.46-.129.976-.193 1.502-.193.516 0 .978.064 1.347.188.317.106.582.261.756.456l.008.009c.15.172.266.368.327.574.049.17.06.34.026.502a.524.524 0 0 1-.342.414z"/>
+            </svg>
+        </div>
+
+        <form id="importForm" class="mb-4">
+            <div class="form-group mb-4">
+                <label for="fileInput">Seleccionar archivo Excel (.xlsx)</label>
+                <input type="file" class="form-control-corporate" id="fileInput" accept=".xlsx" required>
+            </div>
+            <div class="d-grid">
+                <button type="button" class="btn-corporate justify-content-center" id="btnImport">
+                    Iniciar Importación
+                </button>
+            </div>
+        </form>
+
+        <!-- Progress Bar Container -->
+        <div id="progressContainer" class="mt-4" style="display:none;">
+            <div class="progress" style="height: 25px;">
+                <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+            </div>
+            <p id="progressText" class="text-center mt-2 text-muted small">Preparando carga...</p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        $(document).ready(function () {
+            // Retrieve Auth Token from ViewBag
+            const token = "@ViewBag.Token";
+            
+            // Standard HTTPS port for the API
+            const API_URL = "https://localhost:7282";
+
+            // Import Logic
+            $('#btnImport').click(function () {
+                var fileInput = $('#fileInput')[0];
+                
+                // Check if token exists
+                if (!token) {
+                    Swal.fire('Sesión Expirada', 'Por favor, inicie sesión nuevamente.', 'warning').then(() => {
+                        window.location.href = '/Account/Login'; 
+                    });
+                    return;
+                }
+
+                if (fileInput.files.length === 0) {
+                    Swal.fire('Atención', 'Seleccione un archivo.', 'warning');
+                    return;
+                }
+
+                var formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+
+                // Reset and show progress bar
+                $('#progressContainer').show();
+                var $progressBar = $('#progressBar');
+                var $progressText = $('#progressText');
+                
+                $progressBar.css('width', '0%').attr('aria-valuenow', 0).text('0%');
+                $progressText.text('Iniciando carga...');
+                $('#btnImport').prop('disabled', true);
+
+                var processingInterval;
+
+                $.ajax({
+                    url: `${API_URL}/api/ProductInventory/ImportInventory`,
+                    type: 'POST',
+                    data: formData,
+                    // Manual header object for Bearer Auth
+                    headers: { "Authorization": "Bearer " + token },
+                    processData: false,
+                    contentType: false,
+                    // Capture upload progress (0-100% real -> 0-40% visual)
+                    xhr: function() {
+                        var xhr = new window.XMLHttpRequest();
+                        xhr.upload.addEventListener("progress", function(evt) {
+                            if (evt.lengthComputable) {
+                                var realPercent = (evt.loaded / evt.total) * 100;
+                                // Map 0-100 to 0-40
+                                var visualPercent = Math.round(realPercent * 0.4);
+                                
+                                $progressBar.css('width', visualPercent + '%').attr('aria-valuenow', visualPercent).text(visualPercent + '%');
+                                $progressText.text('Subiendo archivo...');
+                                
+                                // When upload finishes (real 100%), start the simulated processing stage (40-90%)
+                                if (realPercent >= 100 && !processingInterval) {
+                                    $progressText.text('Procesando datos en el servidor...');
+                                    var currentVisual = 40;
+                                    processingInterval = setInterval(function() {
+                                        if (currentVisual < 90) {
+                                            currentVisual++;
+                                            $progressBar.css('width', currentVisual + '%').attr('aria-valuenow', currentVisual).text(currentVisual + '%');
+                                        }
+                                    }, 150); // Increment every 150ms (~7.5s to go from 40 to 90)
+                                }
+                            }
+                        }, false);
+                        return xhr;
+                    },
+                    // Double check before sending
+                    beforeSend: function(xhr) {
+                        if (!token) {
+                            xhr.abort();
+                            $('#progressContainer').hide();
+                            $('#btnImport').prop('disabled', false);
+                            Swal.fire('Error', 'No hay token de autenticación. Inicie sesión.', 'error');
+                        }
+                    },
+                    success: function (response) {
+                        // Clear the simulation interval
+                        if (processingInterval) clearInterval(processingInterval);
+                        
+                        // Force to 100%
+                        $progressBar.css('width', '100%').attr('aria-valuenow', 100).text('100%');
+                        $progressText.text('¡Completado!');
+
+                        // Small delay for visual feedback of 100%
+                        setTimeout(function() {
+                            Swal.fire({
+                                title: '¡Éxito!',
+                                text: 'Inventario importado correctamente.',
+                                icon: 'success',
+                                confirmButtonText: 'Ir al Inventario'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    window.location.href = '@Url.Action("Inventario", "Home")';
+                                } else {
+                                    $('#importForm')[0].reset();
+                                    $('#progressContainer').hide();
+                                    $('#btnImport').prop('disabled', false);
+                                }
+                            });
+                        }, 500);
+                    },
+                    error: function (xhr, status, error) {
+                        if (processingInterval) clearInterval(processingInterval);
+                        $('#progressContainer').hide();
+                        $('#btnImport').prop('disabled', false);
+                        console.error("Import error", error);
+                        console.log("Full XHR:", xhr);
+
+                        if (xhr.status === 401) {
+                             Swal.fire('No Autorizado', 'Su sesión ha caducado. Por favor ingrese nuevamente.', 'error');
+                        } else {
+                             Swal.fire('Error', 'Error al importar el archivo: ' + (xhr.responseText || "Error desconocido"), 'error');
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+}

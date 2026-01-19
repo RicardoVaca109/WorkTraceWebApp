@@ -82,6 +82,18 @@ public class HomeController : Controller
         }
     }
 
+    public IActionResult Inventario()
+    {
+        ViewBag.Token = _httpContextAccessor.HttpContext?.Session.GetString("AuthToken");
+        return View();
+    }
+
+    public IActionResult ImportarSheyla()
+    {
+        ViewBag.Token = _httpContextAccessor.HttpContext?.Session.GetString("AuthToken");
+        return View();
+    }
+
     private string? GetUserIdFromSession()
     {
         var token = _httpContextAccessor.HttpContext?.Session.GetString("AuthToken");

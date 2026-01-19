@@ -1,0 +1,455 @@
+@{
+    ViewData["Title"] = "Inventario General";
+}
+
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f3f4f6;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .btn-corporate {
+        background-color: #2563eb;
+        color: white;
+        border: none;
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.375rem;
+        font-weight: 500;
+        transition: background-color 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-corporate:hover {
+        background-color: #1d4ed8;
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-outline-corporate {
+        background-color: white;
+        color: #374151;
+        border: 1px solid #d1d5db;
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.375rem;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .btn-outline-corporate:hover {
+        background-color: #f9fafb;
+        border-color: #9ca3af;
+        text-decoration: none;
+        color: #374151;
+    }
+
+    .card-corporate {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+        margin-bottom: 1rem;
+    }
+
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .table-corporate {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+
+    .table-corporate th {
+        background-color: #f9fafb;
+        color: #6b7280;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        padding: 0.75rem 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .table-corporate td {
+        padding: 1rem 1.5rem;
+        color: #374151;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 0.875rem;
+    }
+
+    .table-corporate tr:hover {
+        background-color: #f9fafb;
+    }
+
+    .modal-header-corporate {
+        background-color: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 1rem 1.5rem;
+        border-top-left-radius: 0.5rem;
+        border-top-right-radius: 0.5rem;
+    }
+
+    .modal-footer-corporate {
+        background-color: #f9fafb;
+        border-top: 1px solid #e5e7eb;
+        padding: 1rem 1.5rem;
+        border-bottom-left-radius: 0.5rem;
+        border-bottom-right-radius: 0.5rem;
+    }
+
+    /* Modal Form Styles */
+    .form-group label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #374151;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control-corporate {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        color: #111827;
+        background-color: white;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+
+    .form-control-corporate:focus {
+        border-color: #2563eb;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    /* Controls Section */
+    .controls-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+        background-color: white;
+    }
+
+    .search-container {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .pagination-container {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .page-info {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+</style>
+
+<div class="container mx-auto px-4 py-8">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a asp-controller="Home" asp-action="Index" class="btn-outline-corporate text-decoration-none">
+            &larr; Volver al Panel
+        </a>
+    </div>
+
+    <div class="page-header">
+        <h1 class="page-title">Inventario General</h1>
+    </div>
+
+    <div class="card-corporate">
+        <!-- Search and Controls -->
+        <div class="controls-container">
+            <div class="search-container">
+                <input type="text" id="searchInput" class="form-control-corporate" placeholder="Buscar por código o descripción..." style="width: 300px;">
+                <button id="btnSearch" class="btn-corporate">Buscar</button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table-corporate" id="inventoryTable">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Descripción</th>
+                        <th>Cantidad</th>
+                        <th>Costo Prom.</th>
+                        <th>Costo Total</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Populated via AJAX -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="controls-container justify-content-end border-top">
+            <div class="pagination-container">
+                <button id="btnPrev" class="btn-outline-corporate" disabled>Anterior</button>
+                <span id="pageInfo" class="page-info">Página 1 de 1</span>
+                <button id="btnNext" class="btn-outline-corporate" disabled>Siguiente</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header-corporate d-flex justify-content-between align-items-center">
+                <h5 class="modal-title font-weight-bold">Editar Producto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="editForm">
+                    <input type="hidden" id="editId">
+                    <div class="form-group mb-3">
+                        <label for="editCode">Código</label>
+                        <input type="text" class="form-control-corporate" id="editCode" required>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="editDescription">Descripción</label>
+                        <input type="text" class="form-control-corporate" id="editDescription" required>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="editQuantity">Cantidad Balance</label>
+                        <input type="number" class="form-control-corporate" id="editQuantity" required>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="editAvgCost">Costo Promedio Balance</label>
+                        <input type="number" step="0.01" class="form-control-corporate" id="editAvgCost" required>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="editTotalCost">Costo Total Balance</label>
+                        <input type="number" step="0.01" class="form-control-corporate" id="editTotalCost" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer-corporate d-flex justify-content-end gap-2">
+                <button type="button" class="btn-outline-corporate" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn-corporate" id="btnSaveEdit">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        $(document).ready(function () {
+            // 1. Define 'const token' at the top
+            const token = "@ViewBag.Token";
+            
+            // NOTE: Adjusted to call the API directly. Ensure CORS is enabled on the API or use a proxy in production.
+            const API_URL = "https://localhost:7282"; // Standard HTTPS port for the first API project in a solution usually.
+
+            let currentPage = 1;
+            const pageSize = 50;
+            let currentSearch = "";
+
+            // Check if token exists
+            if (!token) {
+                Swal.fire('Sesión Expirada', 'Por favor, inicie sesión nuevamente.', 'warning').then(() => {
+                    window.location.href = '/Account/Login'; 
+                });
+                return;
+            }
+
+            loadInventory(currentPage, currentSearch);
+
+            // Search Button
+            $('#btnSearch').click(function() {
+                currentSearch = $('#searchInput').val();
+                currentPage = 1;
+                loadInventory(currentPage, currentSearch);
+            });
+
+            // Enter key on search input
+            $('#searchInput').keypress(function(e) {
+                if(e.which == 13) {
+                    $('#btnSearch').click();
+                }
+            });
+
+            // Pagination - Previous
+            $('#btnPrev').click(function() {
+                if (currentPage > 1) {
+                    currentPage--;
+                    loadInventory(currentPage, currentSearch);
+                }
+            });
+
+            // Pagination - Next
+            $('#btnNext').click(function() {
+                currentPage++;
+                loadInventory(currentPage, currentSearch);
+            });
+
+            function loadInventory(page, search) {
+                $.ajax({
+                    url: `${API_URL}/api/ProductInventory/GetAll?page=${page}&pageSize=${pageSize}&search=${encodeURIComponent(search)}`,
+                    type: 'GET',
+                    // 2. Manual header object
+                    headers: { "Authorization": "Bearer " + token },
+                    // 3. Keep beforeSend validation
+                    beforeSend: function(xhr) {
+                        if (!token) {
+                            xhr.abort();
+                            Swal.fire('Error', 'No hay token de autenticación. Inicie sesión.', 'error');
+                        }
+                    },
+                    success: function (data) {
+                        // Backend now returns { items: [], totalItems: 123 }
+                        const items = data.items;
+                        const totalItems = data.totalItems;
+                        const totalPages = Math.ceil(totalItems / pageSize);
+
+                        let rows = '';
+                        if (items.length === 0) {
+                            rows = '<tr><td colspan="6" class="text-center py-4">No se encontraron registros.</td></tr>';
+                        } else {
+                            items.forEach(item => {
+                                rows += `
+                                    <tr>
+                                        <td class="font-medium text-gray-900">${item.code}</td>
+                                        <td>${item.description}</td>
+                                        <td>${item.quantityBalance}</td>
+                                        <td>${formatCurrency(item.averageCostBalance)}</td>
+                                        <td>${formatCurrency(item.totalCostBalance)}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-link text-primary p-0" onclick="openEditModal('${item.id}')">
+                                                Editar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `;
+                            });
+                        }
+                        $('#inventoryTable tbody').html(rows);
+
+                        // Update Pagination Controls
+                        $('#pageInfo').text(`Página ${page} de ${totalPages || 1}`);
+                        $('#btnPrev').prop('disabled', page <= 1);
+                        $('#btnNext').prop('disabled', page >= totalPages);
+                    },
+                    error: function (err) {
+                        console.error("Error loading inventory", err);
+                        if (err.status === 401) {
+                             Swal.fire('No Autorizado', 'Su sesión ha caducado. Por favor ingrese nuevamente.', 'error');
+                        } else {
+                             Swal.fire('Error', 'No se pudo cargar el inventario.', 'error');
+                        }
+                    }
+                });
+            }
+
+
+
+            // Edit Logic - Open Modal
+            window.openEditModal = function (id) {
+                $.ajax({
+                    url: `${API_URL}/api/ProductInventory/GetById/${id}`,
+                    type: 'GET',
+                    // 2. Manual header object
+                    headers: { "Authorization": "Bearer " + token },
+                    // 3. Keep beforeSend validation
+                    beforeSend: function(xhr) {
+                        if (!token) {
+                            xhr.abort();
+                            Swal.fire('Error', 'No hay token de autenticación. Inicie sesión.', 'error');
+                        }
+                    },
+                    success: function (data) {
+                        $('#editId').val(data.id);
+                        $('#editCode').val(data.code);
+                        $('#editDescription').val(data.description);
+                        $('#editQuantity').val(data.quantityBalance);
+                        $('#editAvgCost').val(data.averageCostBalance);
+                        $('#editTotalCost').val(data.totalCostBalance);
+                        $('#editModal').modal('show');
+                    },
+                    error: function (err) {
+                        if (err.status === 401) {
+                             Swal.fire('No Autorizado', 'Su sesión ha caducado.', 'error');
+                        } else {
+                             Swal.fire('Error', 'No se pudo cargar el producto.', 'error');
+                        }
+                    }
+                });
+            };
+
+            // Edit Logic - Save Changes
+            $('#btnSaveEdit').click(function () {
+                const id = $('#editId').val();
+                const data = {
+                    code: $('#editCode').val(),
+                    description: $('#editDescription').val(),
+                    quantityBalance: parseInt($('#editQuantity').val()),
+                    averageCostBalance: parseFloat($('#editAvgCost').val()),
+                    totalCostBalance: parseFloat($('#editTotalCost').val())
+                };
+
+                $.ajax({
+                    url: `${API_URL}/api/ProductInventory/Update/${id}`,
+                    type: 'PUT',
+                    // 2. Manual header object
+                    headers: { "Authorization": "Bearer " + token },
+                    contentType: 'application/json',
+                    data: JSON.stringify(data),
+                    // 3. Keep beforeSend validation
+                    beforeSend: function(xhr) {
+                        if (!token) {
+                            xhr.abort();
+                            Swal.fire('Error', 'No hay token de autenticación. Inicie sesión.', 'error');
+                        }
+                    },
+                    success: function (response) {
+                        $('#editModal').modal('hide');
+                        Swal.fire('Éxito', 'Producto actualizado.', 'success');
+                        loadInventory(currentPage, currentSearch); // Refresh current page
+                    },
+                    error: function (err) {
+                        if (err.status === 401) {
+                             Swal.fire('No Autorizado', 'Su sesión ha caducado.', 'error');
+                        } else {
+                             Swal.fire('Error', 'No se pudo actualizar el producto.', 'error');
+                        }
+                    }
+                });
+            });
+
+            // 4. Ensure formatCurrency uses 'en-US'/'USD'
+            function formatCurrency(value) {
+                return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+            }
+        });
+    </script>
+}
