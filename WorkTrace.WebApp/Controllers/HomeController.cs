@@ -27,6 +27,7 @@ public class HomeController : Controller
     private readonly IStatusApiService _statusApiService;
     private readonly IFormTemplateApiService _formTemplateApiService;
     private readonly ITakenRequirementApiService _takenRequirementApiService;
+    private readonly IEvaluationDashboardApiService _dashboardApiService;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
 
@@ -39,6 +40,7 @@ public class HomeController : Controller
         IStatusApiService statusApiService,
         IFormTemplateApiService formTemplateApiService,
         ITakenRequirementApiService takenRequirementApiService,
+        IEvaluationDashboardApiService dashboardApiService,
         IHttpContextAccessor httpContextAccessor)
     {
         _logger = logger;
@@ -49,6 +51,7 @@ public class HomeController : Controller
         _statusApiService = statusApiService;
         _formTemplateApiService = formTemplateApiService;
         _takenRequirementApiService = takenRequirementApiService;
+        _dashboardApiService = dashboardApiService;
         _httpContextAccessor = httpContextAccessor;
     }
 
@@ -71,14 +74,47 @@ public class HomeController : Controller
     {
         try 
         {
-            var templates = await _formTemplateApiService.GetAllAsync() ?? new List<WorkTrace.WebApp.Models.Dtos.FormTemplate.FormTemplateResponse>();
-            return View(templates);
+            var usersTask = _userApiService.GetAllAsync();
+            var templatesTask = _formTemplateApiService.GetAllAsync();
+
+            await Task.WhenAll(usersTask, templatesTask);
+
+            var users = usersTask.Result;
+            var templates = templatesTask.Result;
+
+            var targetUsers = users?
+                .Where(u => u.Role == Shared.UserRoles.Técnico || u.Role == Shared.UserRoles.Vendedor)
+                .OrderBy(u => u.FullName)
+                .ToList() ?? new List<UserInformationResponse>();
+            
+            var viewModel = new WorkTrace.WebApp.Models.ViewModels.DashboardViewModel
+            {
+                Users = targetUsers,
+                Templates = templates ?? new List<WorkTrace.WebApp.Models.Dtos.FormTemplate.FormTemplateResponse>()
+            };
+
+            return View(viewModel);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error fetching form templates");
-            TempData["Error"] = "Error al cargar las plantillas de formulario.";
-            return View(new List<WorkTrace.WebApp.Models.Dtos.FormTemplate.FormTemplateResponse>());
+            _logger.LogError(ex, "Error fetching data for dashboard view");
+            TempData["Error"] = "Error al cargar los datos de la vista.";
+            return View(new WorkTrace.WebApp.Models.ViewModels.DashboardViewModel());
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetDashboardData(string userId, DateTime start, DateTime end)
+    {
+        try
+        {
+            var data = await _dashboardApiService.GetDashboardAsync(userId, start, end);
+            return Json(new { success = true, data });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching dashboard data");
+            return Json(new { success = false, message = "Error al obtener datos del tablero." });
         }
     }
 
