@@ -5,19 +5,26 @@
 
 <div class="container-fluid py-4">
     
-    <!-- Tab Navigation -->
-    <ul class="nav nav-tabs mb-4" id="dashboardTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active fw-bold" id="kpi-tab" data-bs-toggle="tab" data-bs-target="#kpi-content" type="button" role="tab" aria-controls="kpi-content" aria-selected="true">
-                <i class="fas fa-chart-line me-2"></i>Métricas de Desempeño
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link fw-bold" id="templates-tab" data-bs-toggle="tab" data-bs-target="#templates-content" type="button" role="tab" aria-controls="templates-content" aria-selected="false">
-                <i class="fas fa-clipboard-list me-2"></i>Gestión de Cuestionarios
-            </button>
-        </li>
-    </ul>
+    <!-- Tab Navigation & Actions -->
+    <div class="d-flex justify-content-between align-items-center border-bottom mb-4">
+        <ul class="nav nav-tabs border-bottom-0" id="dashboardTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active fw-bold" id="kpi-tab" data-bs-toggle="tab" data-bs-target="#kpi-content" type="button" role="tab" aria-controls="kpi-content" aria-selected="true">
+                    <i class="fas fa-chart-line me-2"></i>Métricas de Desempeño
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold" id="templates-tab" data-bs-toggle="tab" data-bs-target="#templates-content" type="button" role="tab" aria-controls="templates-content" aria-selected="false">
+                    <i class="fas fa-clipboard-list me-2"></i>Gestión de Cuestionarios
+                </button>
+            </li>
+        </ul>
+        <div class="mb-1">
+            <a asp-action="Index" asp-controller="Home" class="btn btn-outline-primary btn-sm fw-bold shadow-sm">
+                <i class="fas fa-home me-2"></i>Volver al Panel Principal
+            </a>
+        </div>
+    </div>
 
     <div class="tab-content" id="dashboardTabsContent">
         
