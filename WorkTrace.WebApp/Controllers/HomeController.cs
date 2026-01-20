@@ -250,6 +250,21 @@ public class HomeController : Controller
         }
     }
 
+    [HttpGet("TakenRequirements/GetByDateAll")]
+    public async Task<IActionResult> GetTakenRequirementsByDate(DateTime start, DateTime end)
+    {
+        try
+        {
+            var result = await _takenRequirementApiService.GetByDateAllAsync(start, end);
+            return Json(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting requirements by date");
+            return StatusCode(500, "Error interno del servidor.");
+        }
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateAssignment([FromBody] CreateAssignmentRequest request)
     {

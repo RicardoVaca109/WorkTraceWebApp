@@ -32,4 +32,10 @@ public class TakenRequirementApiService : BaseApiService, ITakenRequirementApiSe
         
         return await ReadResponse<TakenRequirementResponse>(response);
     }
+
+    public async Task<List<TakenRequirementUserAndClientResponse>?> GetByDateAllAsync(DateTime start, DateTime end)
+    {
+        var response = await _client.GetAsync($"{_controller}/GetByDateAll?start={start:yyyy-MM-dd}&end={end:yyyy-MM-dd}");
+        return await ReadResponse<List<TakenRequirementUserAndClientResponse>>(response);
+    }
 }

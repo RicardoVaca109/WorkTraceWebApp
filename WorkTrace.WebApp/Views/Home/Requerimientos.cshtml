@@ -24,9 +24,11 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 40px;
+        margin-bottom: 30px;
         padding-bottom: 20px;
         border-bottom: 1px solid #e9ecef;
+        flex-wrap: wrap;
+        gap: 20px;
     }
 
     .header-title-group {
@@ -53,10 +55,22 @@
     .filter-controls {
         display: flex;
         gap: 12px;
-        align-items: center;
+        align-items: flex-end;
     }
 
-    .form-select-custom {
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .filter-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #6c757d;
+    }
+
+    .form-control-custom {
         border: 1px solid #ced4da;
         border-radius: 6px;
         padding: 8px 12px;
@@ -64,11 +78,10 @@
         color: #495057;
         background-color: #fff;
         box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        cursor: pointer;
         transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
     }
 
-    .form-select-custom:focus {
+    .form-control-custom:focus {
         border-color: #80bdff;
         outline: 0;
         box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
@@ -79,7 +92,7 @@
         color: white;
         border: none;
         border-radius: 6px;
-        padding: 8px 16px;
+        padding: 9px 20px;
         font-weight: 500;
         font-size: 0.9rem;
         display: flex;
@@ -87,11 +100,32 @@
         gap: 8px;
         transition: background-color 0.2s, box-shadow 0.2s;
         box-shadow: 0 2px 4px rgba(13, 110, 253, 0.2);
+        height: 38px;
     }
 
     .btn-create:hover {
         background-color: #0b5ed7;
         box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3);
+        color: white;
+    }
+
+    .btn-filter {
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 9px 16px;
+        font-weight: 500;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: background-color 0.2s;
+        height: 38px;
+    }
+
+    .btn-filter:hover {
+        background-color: #5a6268;
         color: white;
     }
 
@@ -108,6 +142,7 @@
         font-size: 0.9rem;
         transition: all 0.2s;
         background-color: transparent;
+        height: 38px;
     }
 
     .btn-back:hover {
@@ -119,113 +154,135 @@
     /* Grid Layout */
     .cards-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
         gap: 24px;
     }
 
-    /* Info Card Design */
+    /* Enhanced Info Card Design */
     .info-card {
         background-color: #ffffff;
-        border-radius: 8px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-        padding: 24px;
-        height: 260px; /* Fixed height for consistency */
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        padding: 0;
         display: flex;
         flex-direction: column;
-        position: relative;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
-        border-left: 4px solid #dee2e6; /* Default border */
-        cursor: default;
+        border: 1px solid #f0f2f5;
         overflow: hidden;
+        height: 100%;
+        min-height: 280px;
     }
 
     .info-card:hover {
         transform: translateY(-4px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.06);
     }
 
-    /* Status Strip Colors */
-    .info-card.yellow { border-left-color: #f59e0b; } /* Warning/Orange */
-    .info-card.blue { border-left-color: #3b82f6; }   /* Primary/Blue */
-    .info-card.green { border-left-color: #10b981; }  /* Success/Green */
-    .info-card.pink { border-left-color: #ec4899; }   /* Accent/Pink */
+    .card-header-strip {
+        height: 6px;
+        width: 100%;
+        background: linear-gradient(90deg, #3b82f6, #60a5fa);
+    }
 
-    .info-card-header {
+    .info-card-content {
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+    }
+
+    .card-meta {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 16px;
-    }
-
-    .info-card-date {
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        font-size: 0.8rem;
         color: #adb5bd;
-        font-weight: 600;
     }
 
-    .info-card-title {
-        font-size: 1.15rem;
+    .card-date {
         font-weight: 600;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .card-title {
+        font-size: 1.25rem;
+        font-weight: 700;
         color: #212529;
-        margin-bottom: 10px;
-        line-height: 1.4;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
+        margin-bottom: 12px;
+        line-height: 1.3;
     }
 
-    .info-card-body {
-        font-size: 0.925rem;
+    .card-description {
+        font-size: 0.95rem;
         color: #6c757d;
         line-height: 1.6;
+        margin-bottom: 20px;
         flex-grow: 1;
-        overflow-y: auto;
-        margin-bottom: 12px;
-        /* Custom Scrollbar */
-        scrollbar-width: thin;
-        scrollbar-color: #e9ecef transparent;
+        display: -webkit-box;
+        -webkit-line-clamp: 4;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
-    .info-card-body::-webkit-scrollbar {
-        width: 4px;
+    .card-details {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 0.85rem;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
     }
-    .info-card-body::-webkit-scrollbar-track {
-        background: transparent;
+
+    .detail-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #495057;
     }
-    .info-card-body::-webkit-scrollbar-thumb {
+
+    .detail-icon {
+        width: 24px;
+        height: 24px;
         background-color: #e9ecef;
-        border-radius: 4px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6c757d;
+        font-size: 0.75rem;
     }
 
-    /* Footer / Edit Icon */
-    .info-card-footer {
-        margin-top: auto;
-        padding-top: 12px;
-        border-top: 1px solid #f8f9fa;
+    .card-actions {
+        padding: 16px 24px;
+        border-top: 1px solid #f0f2f5;
+        background-color: #fff;
         display: flex;
         justify-content: flex-end;
     }
 
     .btn-edit-card {
-        background: none;
-        border: none;
+        background-color: transparent;
         color: #adb5bd;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
         cursor: pointer;
-        padding: 4px 8px;
-        font-size: 0.95rem;
-        transition: color 0.2s, background-color 0.2s;
-        border-radius: 4px;
     }
 
     .btn-edit-card:hover {
-        color: #495057;
-        background-color: #f8f9fa;
+        color: #0d6efd;
+        background-color: #e7f1ff;
     }
 
-    /* Modal Styling for Consistency */
+    /* Modal Styling */
     .modal-content {
         border-radius: 12px;
         border: none;
@@ -273,6 +330,12 @@
         border-top: 1px solid #f0f2f5;
         border-radius: 0 0 12px 12px;
     }
+    
+    .loading-spinner {
+        text-align: center;
+        padding: 40px;
+        color: #adb5bd;
+    }
 </style>
 
 <div class="dashboard-container">
@@ -281,29 +344,28 @@
         <div class="header-title-group">
             <div>
                 <h2 class="header-title">Requerimientos</h2>
-                <div class="header-subtitle">Gestión y seguimiento de solicitudes</div>
+                <div class="header-subtitle">Gestión y seguimiento de solicitudes por fecha</div>
             </div>
         </div>
         
         <div class="filter-controls">
             <a asp-action="Index" asp-controller="Home" class="btn-back">
-                <i class="fas fa-arrow-left"></i> Volver al Panel Principal
+                <i class="fas fa-arrow-left"></i> Volver
             </a>
-            <select id="monthFilter" class="form-select-custom">
-                <option value="">Todos los Meses</option>
-                <option value="1">Enero</option>
-                <option value="2">Febrero</option>
-                <option value="3">Marzo</option>
-                <option value="4">Abril</option>
-                <option value="5">Mayo</option>
-                <option value="6">Junio</option>
-                <option value="7">Julio</option>
-                <option value="8">Agosto</option>
-                <option value="9">Septiembre</option>
-                <option value="10">Octubre</option>
-                <option value="11">Noviembre</option>
-                <option value="12">Diciembre</option>
-            </select>
+            
+            <div class="filter-group">
+                <label class="filter-label" for="startDate">Desde</label>
+                <input type="date" id="startDate" class="form-control-custom" />
+            </div>
+            
+            <div class="filter-group">
+                <label class="filter-label" for="endDate">Hasta</label>
+                <input type="date" id="endDate" class="form-control-custom" />
+            </div>
+
+            <button class="btn-filter" onclick="loadRequirements()">
+                <i class="fas fa-search"></i> Filtrar
+            </button>
             
             <button class="btn-create" data-bs-toggle="modal" data-bs-target="#createModal">
                 <i class="fas fa-plus"></i> Nuevo
@@ -313,16 +375,11 @@
 
     <!-- Grid -->
     <div class="cards-grid" id="notesContainer">
-        @foreach (var item in Model)
-        {
-            <div class="info-card" data-id="@item.Id" data-client-id="@item.ClientId" data-iso-date="@item.Date.ToString("O")">
-                <div class="info-card-header">
-                    <span class="info-card-date">@item.Date.ToString("dd MMM yyyy")</span>
-                </div>
-                <div class="info-card-title">@item.Title</div>
-                <div class="info-card-body">@item.Description</div>
-            </div>
-        }
+        <!-- Content loaded via AJAX -->
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin fa-2x"></i>
+            <p class="mt-2">Cargando requerimientos...</p>
+        </div>
     </div>
 </div>
 
@@ -371,7 +428,7 @@
     </div>
 </div>
 
-<!-- Edit Modal Injected -->
+<!-- Edit Modal -->
 <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -418,84 +475,145 @@
 
 @section Scripts {
     <script>
-        // Edit Logic Injected
         document.addEventListener('DOMContentLoaded', function() {
-            // Randomize note colors (now status strips) and Inject Edit Icon
-            const colors = ['yellow', 'blue', 'green', 'pink'];
-            
-            // Selector updated to .info-card (was .post-it)
-            $('.info-card').each(function() {
-                const $note = $(this);
+            // Set default date range (Current Month)
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-                // --- Local Time Logic ---
-                const isoDate = $note.attr('data-iso-date');
-                if (isoDate) {
-                    const date = new Date(isoDate);
-                    if (!isNaN(date.getTime())) {
-                        // 1. Update Display Date (e.g., "15 Ene 2026")
-                        const displayDate = new Intl.DateTimeFormat('es-ES', { 
-                            day: 'numeric', 
-                            month: 'short', 
-                            year: 'numeric' 
-                        }).format(date);
-                        
-                        // Selector updated to .info-card-date (was .post-it-date)
-                        $note.find('.info-card-date').text(displayDate);
+            // Format to yyyy-MM-dd
+            const formatDate = (d) => d.toISOString().split('T')[0];
 
-                        // 2. Update Filter Date Attribute (yyyy-MM-dd) for the Month Filter
-                        const year = date.getFullYear();
-                        const month = String(date.getMonth() + 1).padStart(2, '0');
-                        const day = String(date.getDate()).padStart(2, '0');
-                        $note.attr('data-date', `${year}-${month}-${day}`);
-                    }
-                }
-                // -----------------------------
-                
-                // Random Color (Now applies Left Border class)
-                const randomColor = colors[Math.floor(Math.random() * colors.length)];
-                $note.addClass(randomColor);
+            document.getElementById('startDate').value = formatDate(firstDay);
+            document.getElementById('endDate').value = formatDate(lastDay);
 
-                // Inject Edit Icon (Footer)
-                const $footer = $('<div class="info-card-footer"></div>');
-                // Replaced logic with new classes
-                const $editBtn = $('<button class="btn-edit-card" title="Editar"><i class="fas fa-pen"></i></button>');
-                
-                $editBtn.on('click', function(e) {
-                    e.stopPropagation(); // Prevent triggering click if any
-                    openEditModal($note);
-                });
-
-                $footer.append($editBtn);
-                $note.append($footer);
-            });
-
-            // Filter Logic
-            $('#monthFilter').on('change', function() {
-                const selectedMonth = $(this).val();
-                
-                // Selector updated to .info-card
-                $('.info-card').each(function() {
-                    const $note = $(this);
-                    if (selectedMonth === "") {
-                        $note.css('display', 'flex');
-                    } else {
-                        const dateStr = $note.attr('data-date'); // yyyy-MM-dd
-                        if (!dateStr) return;
-                        
-                        const month = parseInt(dateStr.split('-')[1]);
-                        
-                        if (month.toString() === selectedMonth) {
-                            $note.css('display', 'flex');
-                        } else {
-                            $note.css('display', 'none');
-                        }
-                    }
-                });
-            });
+            // Load initial data
+            loadRequirements();
         });
 
-        // PRESERVED AJAX LOGIC -----------------------
+        function loadRequirements() {
+            const start = document.getElementById('startDate').value;
+            const end = document.getElementById('endDate').value;
+            const container = document.getElementById('notesContainer');
 
+            if (!start || !end) {
+                Swal.fire('Atención', 'Seleccione un rango de fechas válido', 'warning');
+                return;
+            }
+
+            // Show Spinner
+            container.innerHTML = `
+                <div class="loading-spinner" style="grid-column: 1 / -1;">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                    <p class="mt-2">Cargando requerimientos...</p>
+                </div>`;
+
+            // Fetch Data
+            fetch(`/TakenRequirements/GetByDateAll?start=${start}&end=${end}`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Error en la petición');
+                    return response.json();
+                })
+                .then(data => {
+                    container.innerHTML = '';
+                    
+                    if (!data || data.length === 0) {
+                        container.innerHTML = `
+                            <div class="text-center text-muted py-5" style="grid-column: 1 / -1;">
+                                <i class="fas fa-folder-open fa-3x mb-3"></i>
+                                <p>No se encontraron requerimientos en este rango de fechas.</p>
+                            </div>`;
+                        return;
+                    }
+
+                    data.forEach(item => {
+                        const card = createCard(item);
+                        container.appendChild(card);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    container.innerHTML = `
+                        <div class="text-center text-danger py-5" style="grid-column: 1 / -1;">
+                            <i class="fas fa-exclamation-circle fa-3x mb-3"></i>
+                            <p>Error al cargar los datos. Intente nuevamente.</p>
+                        </div>`;
+                });
+        }
+
+        function createCard(item) {
+            const div = document.createElement('div');
+            div.className = 'info-card';
+            div.dataset.id = item.id;
+            div.dataset.clientId = item.client ? item.client.id : '';
+            
+            // Format Date
+            const dateObj = new Date(item.date);
+            const dateStr = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+            
+            // Safe accessors
+            const clientName = item.client ? item.client.fullName : 'Sin cliente asignado';
+            const sellerName = item.userId ? item.userId.fullName : 'Usuario desconocido';
+
+            div.innerHTML = `
+                <div class="card-header-strip"></div>
+                <div class="info-card-content">
+                    <div class="card-meta">
+                        <span class="card-date"><i class="far fa-calendar-alt"></i> ${dateStr}</span>
+                        <span class="badge bg-light text-dark border">ID: ${item.id.substring(0, 8)}...</span>
+                    </div>
+                    <h3 class="card-title">${item.title}</h3>
+                    <div class="card-description">${item.description}</div>
+                    
+                    <div class="card-details">
+                        <div class="detail-row">
+                            <div class="detail-icon" title="Cliente"><i class="fas fa-user-tie"></i></div>
+                            <span>${clientName}</span>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-icon" title="Vendedor"><i class="fas fa-user-tag"></i></div>
+                            <span>${sellerName}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <button class="btn-edit-card" onclick="openEditModalFromObj(this, '${item.id}', '${item.client ? item.client.id : ''}', '${escapeHtml(item.title)}', '${escapeHtml(item.description)}')">
+                        <i class="fas fa-pen"></i> Editar
+                    </button>
+                </div>
+            `;
+            return div;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Updated Modal Logic
+        function openEditModalFromObj(btn, id, clientId, title, description) {
+            // Unescape for inputs
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = title;
+            const safeTitle = tempDiv.textContent;
+            tempDiv.innerHTML = description;
+            const safeDesc = tempDiv.textContent;
+
+            $('#editId').val(id);
+            $('#editClientId').val(clientId);
+            $('#editTitle').val(safeTitle);
+            $('#editDescription').val(safeDesc);
+
+            const modal = new bootstrap.Modal(document.getElementById('editModal'));
+            modal.show();
+        }
+
+        // Existing Create Logic
         function submitCreate() {
             const userId = $('#createUserId').val();
             const clientId = $('#createClientId').val();
@@ -522,7 +640,14 @@
                 success: function(res) {
                     if (res.success) {
                         Swal.fire('Éxito', 'Nota creada correctamente', 'success').then(() => {
-                            location.reload();
+                            // Reload data instead of page refresh
+                            $('#createModal').modal('hide');
+                            $('.modal-backdrop').remove(); // Clean up backdrop
+                            loadRequirements();
+                            // Clear form
+                            $('#createTitle').val('');
+                            $('#createDescription').val('');
+                            $('#createClientId').val('');
                         });
                     } else {
                         Swal.fire('Error', res.message, 'error');
@@ -534,25 +659,7 @@
             });
         }
 
-        function openEditModal($note) {
-            // Extract data
-            const id = $note.attr('data-id');
-            const clientId = $note.attr('data-client-id');
-            // Selectors updated to match new classes
-            const title = $note.find('.info-card-title').text();
-            const description = $note.find('.info-card-body').text();
-
-            // Populate Modal
-            $('#editId').val(id);
-            $('#editClientId').val(clientId);
-            $('#editTitle').val(title);
-            $('#editDescription').val(description);
-
-            // Show Modal
-            const modal = new bootstrap.Modal(document.getElementById('editModal'));
-            modal.show();
-        }
-
+        // Existing Edit Logic
         function submitEdit() {
             const id = $('#editId').val();
             const clientId = $('#editClientId').val();
@@ -579,7 +686,9 @@
                 success: function(res) {
                     if (res.success) {
                         Swal.fire('Éxito', 'Nota actualizada correctamente', 'success').then(() => {
-                            location.reload();
+                            $('#editModal').modal('hide');
+                            $('.modal-backdrop').remove();
+                            loadRequirements();
                         });
                     } else {
                         Swal.fire('Error', res.message, 'error');

@@ -7,4 +7,5 @@ public interface ITakenRequirementApiService
     Task<List<TakenRequirementResponse>?> GetAllAsync();
     Task<TakenRequirementResponse?> CreateAsync(CreateTakenRequirementRequest request);
     Task<TakenRequirementResponse?> UpdateAsync(string id, UpdateTakenRequirementRequest request);
+    Task<List<TakenRequirementUserAndClientResponse>?> GetByDateAllAsync(DateTime start, DateTime end);
 }
