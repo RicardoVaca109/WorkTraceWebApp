@@ -274,15 +274,17 @@
                     if (!$(info.jsEvent.target).hasClass('edit-assignment-btn')) {
                         var props = info.event.extendedProps;
                         var modal = $('#assignmentDetailModal');
-                        modal.find('.modal-title').text('Detalle de la Asignación');
                         
+                        // Reset Tabs
+                        var triggerFirstTabEl = document.querySelector('#assignmentDetailTabs button[data-bs-target="#general-tab-pane"]')
+                        bootstrap.Tab.getInstance(triggerFirstTabEl)?.show() || new bootstrap.Tab(triggerFirstTabEl).show();
+
                         var formatToLocalDateTime = (isoString) => {
                             if (!isoString) return { date: 'No registrado', time: '' };
                             const date = new Date(isoString);
                             
                             if (isNaN(date.getTime())) return { date: 'Inválido', time: '' };
 
-                            // Use Intl.DateTimeFormat for robust local conversion
                             const datePart = new Intl.DateTimeFormat('es-ES', {
                                 year: 'numeric',
                                 month: '2-digit',
@@ -304,18 +306,15 @@
                         var userList = props.users && props.users.length > 0 ? '<ul>' + props.users.map(u => `<li>${u}</li>`).join('') + '</ul>' : '<p class="text-muted fst-italic">No hay técnicos asignados.</p>';
                         
                         var assignedTemplatesHtml = '<p class="text-muted fst-italic">No hay plantillas asignadas.</p>';
-                        // Robust check for various potential property names
                         var tIds = props.assignedTemplateIds || props.assignedForms || props.AssignedForms || [];
                         
                         if (tIds && tIds.length > 0) {
                             var listItems = tIds.map(tid => {
-                                // Robust lookup: try direct ID, stringified ID, or fallback
                                 var name = templateMap[tid] || templateMap[String(tid)] || "Plantilla Desconocida";
                                 return `<li>${name}</li>`;
                             }).join('');
                             assignedTemplatesHtml = `<ul>${listItems}</ul>`;
                         } else if (props.assignedTemplates && props.assignedTemplates.length > 0) {
-                             // Fallback for legacy support if needed
                              assignedTemplatesHtml = '<ul>' + props.assignedTemplates.map(t => `<li>${t}</li>`).join('') + '</ul>';
                         }
 
@@ -352,7 +351,153 @@
                                            <p><strong><i class="fas fa-user-plus me-2"></i>Creado por:</strong> ${userMap[props.createdByUser] || 'No registrado'}</p><hr/>
                                            <p><strong><i class="fas fa-clipboard-list me-2"></i>Plantillas Asignadas:</strong></p>${assignedTemplatesHtml}
                                            <p><strong><i class="fas fa-users me-2"></i>Técnicos Asignados:</strong></p>${userList}`;
-                        modal.find('.modal-body').html(bodyContent);
+                        
+                        $('#assignment-general-content').html(bodyContent);
+
+                        // --- POPULATE EVALUATION TAB (AJAX) ---
+                        var evalContainer = $('#assignment-evaluation-content');
+                        evalContainer.html('<div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div><p class="mt-2 text-muted">Cargando detalles de evaluación...</p></div>');
+
+                        $.ajax({
+                            url: '@Url.Action("GetAssignmentEvaluationDetail", "Home")',
+                            data: { assignmentId: info.event.id },
+                            success: function(response) {
+                                if (response && response.success && response.data) {
+                                    var d = response.data;
+                                    var html = '<div class="container-fluid px-0">';
+
+                                    // 1. Technician's Evidence
+                                    html += '<h5 class="fw-bold text-dark mb-3"><i class="fas fa-tools me-2 text-primary"></i>Evidencia del Técnico</h5>';
+                                    html += '<div class="card border-0 shadow-sm mb-4 bg-light rounded-3">';
+                                    html += '<div class="card-body">';
+                                    html += `<p class="mb-3 text-muted"><span class="fw-bold text-dark">Comentario:</span> ${d.userComment || '<span class="fst-italic">Sin comentarios.</span>'}</p>`;
+                                    
+                                    if (d.mediaFiles && d.mediaFiles.length > 0) {
+                                        html += '<div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">';
+                                        d.mediaFiles.forEach(function(media) {
+                                            html += `<div class="col">
+                                                        <div class="card h-100 border-0 shadow-sm overflow-hidden position-relative group-hover-zoom">
+                                                            <a href="${media.url}" target="_blank" class="stretched-link">
+                                                                <img src="${media.url}" class="card-img-top w-100 h-100" style="object-fit: cover; min-height: 120px;" alt="Evidencia">
+                                                            </a>
+                                                            <div class="card-img-overlay d-flex align-items-end p-0">
+                                                                <div class="bg-dark bg-opacity-50 text-white w-100 p-1 text-center small opacity-0 hover-opacity-100 transition-opacity">
+                                                                    <i class="fas fa-search-plus"></i> Ver
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                     </div>`;
+                                        });
+                                        html += '</div>';
+                                    } else {
+                                        html += '<div class="text-muted fst-italic small"><i class="far fa-image me-1"></i>No hay archivos multimedia adjuntos.</div>';
+                                    }
+                                    html += '</div></div>';
+
+                                    // 2. Client Conformity (Receipt Style)
+                                    html += '<h5 class="fw-bold text-dark mb-3"><i class="fas fa-file-signature me-2 text-primary"></i>Conformidad del Cliente</h5>';
+                                    if (d.clientSignature) {
+                                        html += `<div class="card border-0 shadow-sm mb-4" style="background-color: #f8f9fa; border-left: 5px solid #198754 !important;">
+                                                    <div class="card-body">
+                                                        <div class="d-flex justify-content-between align-items-start mb-3">
+                                                            <div>
+                                                                <h6 class="fw-bold mb-1">Recibo de Conformidad</h6>
+                                                                <p class="text-muted small mb-0">Firmado digitalmente</p>
+                                                            </div>
+                                                            <div class="text-end">
+                                                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-3">Firmado</span>
+                                                            </div>
+                                                        </div>
+                                                        <p class="mb-3 small text-muted"><span class="fw-bold text-dark">Comentario:</span> ${d.clientComment || '<span class="fst-italic">Sin comentarios.</span>'}</p>
+                                                        <div class="text-center p-3 bg-white border border-secondary border-opacity-25 rounded-3" style="border-style: dashed !important;">
+                                                            <img src="${d.clientSignature.url}" class="img-fluid" style="max-height: 100px;" alt="Firma del Cliente">
+                                                            <div class="mt-2 pt-2 border-top">
+                                                                <p class="mb-0 small fw-bold text-dark">${d.clientName || d.clientSignature.signedBy || 'Cliente'}</p>
+                                                                <p class="mb-0 x-small text-muted">${new Date(d.clientSignature.signedAt).toLocaleString()}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                 </div>`;
+                                    } else {
+                                        html += '<div class="alert alert-warning border-0 shadow-sm mb-4 rounded-3"><i class="fas fa-exclamation-triangle me-2"></i>El cliente no ha firmado ni expresado conformidad.</div>';
+                                    }
+
+                                    // 3. Evaluation Results
+                                    html += '<h5 class="fw-bold text-dark mb-3"><i class="fas fa-clipboard-check me-2 text-primary"></i>Resultados de Evaluación</h5>';
+                                    
+                                    if (d.forms && d.forms.length > 0) {
+                                        d.forms.forEach(function(form) {
+                                            html += `<div class="card mb-4 border-0 shadow-sm rounded-3 overflow-hidden">
+                                                        <div class="card-header bg-white border-bottom py-3">
+                                                            <h6 class="mb-0 fw-bold text-primary">${form.formName}</h6>
+                                                        </div>
+                                                        <div class="card-body p-0">`;
+                                            
+                                            if (form.userEvaluations && form.userEvaluations.length > 0) {
+                                                form.userEvaluations.forEach(function(uEval, uIndex) {
+                                                    if(uIndex > 0) html += '<hr class="my-0 bg-light">';
+                                                    html += `<div class="p-3">
+                                                                <div class="d-flex align-items-center mb-3">
+                                                                    <div class="avatar bg-primary bg-opacity-10 text-primary rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                                                        <i class="fas fa-user small"></i>
+                                                                    </div>
+                                                                    <div>
+                                                                        <h6 class="mb-0 fw-bold text-dark small">${uEval.userName}</h6>
+                                                                    </div>
+                                                                </div>`;
+                                                    
+                                                    if (uEval.answers && uEval.answers.length > 0) {
+                                                        html += '<ul class="list-group list-group-flush rounded-3">';
+                                                        uEval.answers.forEach(function(ans) {
+                                                            var questionText = form.questions.find(q => q.questionKey === ans.questionKey)?.questionText || ans.questionKey;
+                                                            var answerDisplay = '';
+                                                            
+                                                            if (ans.numericValue !== null) {
+                                                                // Star Rating display
+                                                                var stars = '';
+                                                                for(var i=1; i<=5; i++) {
+                                                                    if (i <= ans.numericValue) stars += '<i class="fas fa-star text-warning"></i>';
+                                                                    else stars += '<i class="far fa-star text-muted opacity-25"></i>';
+                                                                }
+                                                                answerDisplay = `<div class="text-nowrap" title="${ans.numericValue}/5">${stars}</div>`;
+                                                            } else {
+                                                                answerDisplay = `<span class="badge bg-secondary bg-opacity-75 fw-normal text-wrap text-start lh-sm">${ans.answer || ans.questionValue || 'N/A'}</span>`;
+                                                            }
+
+                                                            html += `<li class="list-group-item d-flex justify-content-between align-items-center bg-light bg-opacity-25 border-bottom-0 py-2">
+                                                                        <span class="small text-muted me-3 lh-sm" style="max-width: 65%;">${questionText}</span>
+                                                                        ${answerDisplay}
+                                                                     </li>`;
+                                                        });
+                                                        html += '</ul>';
+                                                    } else {
+                                                        html += '<p class="text-muted fst-italic small ps-4 mb-0">Sin respuestas registradas.</p>';
+                                                    }
+                                                    html += `</div>`;
+                                                });
+                                            } else {
+                                                html += '<div class="p-3 text-muted fst-italic small">No hay evaluaciones de usuarios para este formulario.</div>';
+                                            }
+
+                                            html += `   </div>
+                                                     </div>`;
+                                        });
+                                    } else {
+                                        html += '<div class="alert alert-secondary border-0 shadow-sm rounded-3"><i class="fas fa-info-circle me-2"></i>No hay formularios de evaluación registrados.</div>';
+                                    }
+
+                                    html += '</div>';
+                                    evalContainer.html(html);
+
+                                } else {
+                                    evalContainer.html('<div class="alert alert-info"><i class="fas fa-info-circle me-2"></i>Esta asignación aún no tiene detalles de ejecución o evaluación registrados.</div>');
+                                }
+                            },
+                            error: function() {
+                                evalContainer.html('<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>Error al cargar los detalles de evaluación.</div>');
+                            }
+                        });
+
                         modal.modal('show');
                     }
                 },
@@ -547,7 +692,32 @@
                 <h5 class="modal-title" id="assignmentDetailModalLabel">Detalle de la Asignación</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body"></div>
+            <div class="modal-body p-0">
+                 <!-- Tabs -->
+                <ul class="nav nav-tabs px-3 pt-3" id="assignmentDetailTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general-tab-pane" type="button" role="tab" aria-controls="general-tab-pane" aria-selected="true">General</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="evaluation-tab" data-bs-toggle="tab" data-bs-target="#evaluation-tab-pane" type="button" role="tab" aria-controls="evaluation-tab-pane" aria-selected="false">Ejecución y Evaluación</button>
+                    </li>
+                </ul>
+                <div class="tab-content p-3" id="assignmentDetailTabContent">
+                    <div class="tab-pane fade show active" id="general-tab-pane" role="tabpanel" aria-labelledby="general-tab" tabindex="0">
+                        <div id="assignment-general-content"></div>
+                    </div>
+                    <div class="tab-pane fade" id="evaluation-tab-pane" role="tabpanel" aria-labelledby="evaluation-tab" tabindex="0">
+                        <div id="assignment-evaluation-content">
+                             <div class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Cargando...</span>
+                                </div>
+                                <p class="mt-2 text-muted">Cargando detalles de evaluación...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
             </div>

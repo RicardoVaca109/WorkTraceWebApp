@@ -28,6 +28,7 @@ public class HomeController : Controller
     private readonly IFormTemplateApiService _formTemplateApiService;
     private readonly ITakenRequirementApiService _takenRequirementApiService;
     private readonly IEvaluationDashboardApiService _dashboardApiService;
+    private readonly IAssignmentEvaluationApiService _assignmentEvaluationApiService;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
 
@@ -41,6 +42,7 @@ public class HomeController : Controller
         IFormTemplateApiService formTemplateApiService,
         ITakenRequirementApiService takenRequirementApiService,
         IEvaluationDashboardApiService dashboardApiService,
+        IAssignmentEvaluationApiService assignmentEvaluationApiService,
         IHttpContextAccessor httpContextAccessor)
     {
         _logger = logger;
@@ -52,6 +54,7 @@ public class HomeController : Controller
         _formTemplateApiService = formTemplateApiService;
         _takenRequirementApiService = takenRequirementApiService;
         _dashboardApiService = dashboardApiService;
+        _assignmentEvaluationApiService = assignmentEvaluationApiService;
         _httpContextAccessor = httpContextAccessor;
     }
 
@@ -406,6 +409,27 @@ public class HomeController : Controller
             _logger.LogError(ex, "Error updating assignment");
             var errorMessage = ErrorParser.Parse(ex.Message);
             return Json(new { success = false, message = "No se pudo actualizar la asignación: \n" + errorMessage });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAssignmentEvaluationDetail(string assignmentId)
+    {
+        try
+        {
+            var detail = await _assignmentEvaluationApiService.GetEvaluationDetailByAssignmentAsync(assignmentId);
+            if (detail == null)
+            {
+                // It's possible there is no evaluation yet. Return null or specific status.
+                // Returning null here so the frontend can handle "no evaluation found" gracefully.
+                return Json(null);
+            }
+            return Json(new { success = true, data = detail });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting assignment evaluation detail for {AssignmentId}", assignmentId);
+            return StatusCode(500, "Error al obtener los detalles de la evaluación.");
         }
     }
 

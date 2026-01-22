@@ -60,5 +60,10 @@ public static class ServiceExtension
         {
             client.BaseAddress = new Uri(apiBaseUrl);
         }).AddHttpMessageHandler<AuthTokenHandler>();
+
+        services.AddHttpClient<IAssignmentEvaluationApiService, AssignmentEvaluationApiService>(client =>
+        {
+            client.BaseAddress = new Uri(apiBaseUrl);
+        }).AddHttpMessageHandler<AuthTokenHandler>();
     }
 }
