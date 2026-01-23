@@ -72,6 +72,11 @@
 
             $("#createAssignmentForm").on("submit", function(e) {
                 e.preventDefault();
+                
+                var $submitBtn = $(this).find('button[type="submit"]');
+                var originalText = $submitBtn.text();
+                $submitBtn.prop('disabled', true).text('Guardando...');
+
                 const dateVal = $('#date').val();
                 const timeVal = $('#time').val();
                 const combinedDateTime = new Date(`${dateVal}T${timeVal}`);
@@ -125,6 +130,9 @@
                     },
                     error: function() {
                         showNotification('Ocurrió un error al conectar con el servidor.', 'error');
+                    },
+                    complete: function() {
+                        $submitBtn.prop('disabled', false).text(originalText);
                     }
                 });
             });
