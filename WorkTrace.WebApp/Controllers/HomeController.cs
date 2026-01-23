@@ -86,7 +86,7 @@ public class HomeController : Controller
             var templates = templatesTask.Result;
 
             var targetUsers = users?
-                .Where(u => u.Role == Shared.UserRoles.Técnico || u.Role == Shared.UserRoles.Vendedor)
+                .Where(u => u.Role == Shared.UserRoles.Técnico)
                 .OrderBy(u => u.FullName)
                 .ToList() ?? new List<UserInformationResponse>();
             
