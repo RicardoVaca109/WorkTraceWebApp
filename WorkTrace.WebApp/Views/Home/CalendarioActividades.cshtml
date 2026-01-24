@@ -9,6 +9,9 @@
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js'></script>
     <script src='https://cdn.jsdelivr.net/npm/@@fullcalendar/bootstrap5@6.1.19/index.global.min.js'></script>
     <script src='https://cdn.jsdelivr.net/npm/@@fullcalendar/core/locales-all.global.min.js'></script>
+    <!-- PDF Generation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -21,6 +24,227 @@
             var serviceMap = JSON.parse('@Html.Raw(Model?.ServicesJson ?? "{}")');
             var statusMap = JSON.parse('@Html.Raw(Model?.StatusesJson ?? "{}")');
             var templateMap = JSON.parse('@Html.Raw(Model?.FormTemplatesJson ?? "{}")');
+
+            // --- Report Data Context ---
+            let currentReportData = {
+                id: null,
+                general: null,
+                evaluation: null,
+                date: null
+            };
+
+            const getBase64FromUrl = async (url) => {
+                const data = await fetch(url);
+                const blob = await data.blob();
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(blob);
+                    reader.onloadend = () => resolve(reader.result);
+                });
+            };
+
+            document.getElementById('btnDownloadReport').addEventListener('click', async function() {
+                if (!currentReportData.general) {
+                    Swal.fire('Error', 'No hay datos cargados para generar el informe.', 'error');
+                    return;
+                }
+
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                const d = currentReportData;
+                const gen = d.general;
+                const ev = d.evaluation;
+
+                // --- HEADER ---
+                try {
+                    const logo = await getBase64FromUrl('/images/logo_menu.png');
+                    doc.addImage(logo, 'PNG', 15, 10, 50, 15); // x, y, w, h
+                } catch (e) {
+                    console.error("Error loading logo", e);
+                }
+
+                doc.setFontSize(16);
+                doc.setTextColor(40);
+                doc.text("TECNIC SOLUTION", 195, 18, { align: 'right' });
+                doc.setFontSize(10);
+                doc.setTextColor(100);
+                doc.text("Informe de Servicio Técnico", 195, 24, { align: 'right' });
+                
+                const reportDate = new Date().toLocaleDateString('es-EC', { year: 'numeric', month: 'long', day: 'numeric' });
+                doc.text(`Fecha de Emisión: ${reportDate}`, 195, 29, { align: 'right' });
+                doc.text(`Ticket #${d.id.substring(0, 8).toUpperCase()}`, 195, 34, { align: 'right' });
+
+                // --- GENERAL INFORMATION ---
+                doc.autoTable({
+                    startY: 40,
+                    head: [['Información General', '']],
+                    body: [
+                        ['Cliente', gen.client || ''],
+                        ['Servicio', gen.service || ''],
+                        ['Dirección', gen.address || ''],
+                        ['Estado', gen.status || ''],
+                        ['Fecha Asignada', d.date ? new Date(d.date).toLocaleString('es-EC') : ''],
+                        ['Técnicos Asignados', (gen.users || []).join(', ')]
+                    ],
+                    theme: 'grid',
+                    headStyles: { fillColor: [13, 110, 253], textColor: 255, fontStyle: 'bold' },
+                    columnStyles: { 0: { fontStyle: 'bold', width: 50 } },
+                    styles: { fontSize: 10, cellPadding: 3 }
+                });
+
+                let lastY = doc.lastAutoTable.finalY + 10;
+
+                // --- EVALUATION & EXECUTION ---
+                if (ev) {
+                    // Technician Comments
+                    if (ev.userComment) {
+                        doc.setFontSize(12);
+                        doc.setTextColor(0);
+                        doc.text("Evidencia del Técnico", 15, lastY);
+                        lastY += 5;
+                        
+                        doc.setFontSize(10);
+                        doc.setTextColor(80);
+                        // Multi-line text for comment
+                        const splitComment = doc.splitTextToSize(`Comentario: ${ev.userComment}`, 180);
+                        doc.text(splitComment, 15, lastY);
+                        lastY += (splitComment.length * 5) + 5;
+                    }
+
+                    // Media Files (Images)
+                    if (ev.mediaFiles && ev.mediaFiles.length > 0) {
+                        lastY += 2;
+                        doc.setFontSize(10);
+                        doc.setTextColor(0);
+                        doc.text("Evidencia Fotográfica Adjunta:", 15, lastY);
+                        lastY += 6;
+
+                        let xPos = 15;
+                        const imgW = 40;
+                        const imgH = 40;
+                        const gap = 5;
+
+                        for (const media of ev.mediaFiles) {
+                            try {
+                                if (lastY + imgH > 270) { doc.addPage(); lastY = 20; }
+                                
+                                const imgData = await getBase64FromUrl(media.url);
+                                const ext = media.url.toLowerCase().endsWith('.png') ? 'PNG' : 'JPEG';
+                                doc.addImage(imgData, ext, xPos, lastY, imgW, imgH);
+                                
+                                xPos += imgW + gap;
+                                if (xPos + imgW > 195) { // Wrap row
+                                    xPos = 15;
+                                    lastY += imgH + gap;
+                                }
+                            } catch (err) {
+                                console.warn("Error loading image", media.url);
+                            }
+                        }
+                        // Adjust Y after images (if xPos moved, we added a row, need to push Y down)
+                        if (xPos > 15) lastY += imgH + 10;
+                        else lastY += 5;
+                    }
+
+                    // Client Conformity
+                    if (ev.clientSignature) {
+                        doc.setFontSize(12);
+                        doc.setTextColor(0);
+                        doc.text("Conformidad del Cliente", 15, lastY);
+                        lastY += 6;
+
+                        // Receipt box style
+                        doc.setDrawColor(25, 135, 84); // Success green
+                        doc.setLineWidth(0.5);
+                        doc.rect(15, lastY, 180, 35);
+                        
+                        doc.setFontSize(10);
+                        doc.setTextColor(40);
+                        doc.text(`Firmado por: ${ev.clientSignature.signedBy || 'Cliente'}`, 20, lastY + 8);
+                        doc.text(`Fecha: ${new Date(ev.clientSignature.signedAt).toLocaleString()}`, 20, lastY + 14);
+                        
+                        if (ev.clientComment) {
+                            doc.text(`Comentario Cliente: ${ev.clientComment}`, 20, lastY + 20);
+                        } else {
+                            doc.text(`Comentario Cliente: (Ninguno)`, 20, lastY + 20);
+                        }
+                        
+                        // Add Signature Image
+                        if (ev.clientSignature.url) {
+                            try {
+                                const sigData = await getBase64FromUrl(ev.clientSignature.url);
+                                // Place it nicely in the center/right of the box
+                                doc.addImage(sigData, 'PNG', 80, lastY + 2, 60, 30); 
+                            } catch (err) {
+                                doc.text("(Error cargando firma)", 80, lastY + 20);
+                            }
+                        }
+                        
+                        lastY += 45;
+                    } else {
+                        // Not signed warning
+                        doc.setFontSize(10);
+                        doc.setTextColor(220, 53, 69);
+                        doc.text("Nota: El cliente no ha registrado conformidad digital.", 15, lastY);
+                        lastY += 10;
+                    }
+
+                    // Evaluation Forms
+                    if (ev.forms && ev.forms.length > 0) {
+                        doc.setFontSize(12);
+                        doc.setTextColor(0);
+                        doc.text("Resultados de Evaluación", 15, lastY);
+                        lastY += 5;
+
+                        ev.forms.forEach(form => {
+                            const bodyData = [];
+                            
+                            if (form.userEvaluations) {
+                                form.userEvaluations.forEach(uEval => {
+                                    // Header row for user
+                                    bodyData.push([{ content: `Evaluador: ${uEval.userName}`, colSpan: 2, styles: { fillColor: [240, 240, 240], fontStyle: 'bold', textColor: 50 } }]);
+                                    
+                                    if(uEval.answers) {
+                                        uEval.answers.forEach(ans => {
+                                            const qText = form.questions.find(q => q.questionKey === ans.questionKey)?.questionText || ans.questionKey;
+                                            const val = ans.numericValue !== null ? `${ans.numericValue} / 5` : (ans.answer || 'N/A');
+                                            bodyData.push([qText, val]);
+                                        });
+                                    }
+                                });
+                            }
+
+                            if (bodyData.length > 0) {
+                                doc.autoTable({
+                                    startY: lastY,
+                                    head: [[`Formulario: ${form.formName}`, 'Respuesta']],
+                                    body: bodyData,
+                                    theme: 'striped',
+                                    headStyles: { fillColor: [108, 117, 125] },
+                                    margin: { left: 15, right: 15 }
+                                });
+                                lastY = doc.lastAutoTable.finalY + 10;
+                            }
+                        });
+                    }
+                } else {
+                    doc.setFontSize(10);
+                    doc.setTextColor(100);
+                    doc.text("No hay detalles de ejecución o evaluación registrados para esta asignación.", 15, lastY);
+                }
+
+                // Footer
+                const pageCount = doc.internal.getNumberOfPages();
+                for (let i = 1; i <= pageCount; i++) {
+                    doc.setPage(i);
+                    doc.setFontSize(8);
+                    doc.setTextColor(150);
+                    doc.text(`Página ${i} de ${pageCount}`, 195, 290, { align: 'right' });
+                    doc.text("Generado por WorkTrace System", 15, 290, { align: 'left' });
+                }
+
+                doc.save(`Informe_TecnicSolution_${d.id.substring(0,8)}.pdf`);
+            });
 
             function showNotification(message, type, shouldReload) {
                 Swal.fire({
@@ -283,6 +507,14 @@
                         var props = info.event.extendedProps;
                         var modal = $('#assignmentDetailModal');
                         
+                        // Capture data for report
+                        currentReportData = { 
+                            id: info.event.id, 
+                            general: props, 
+                            evaluation: null, 
+                            date: info.event.start 
+                        };
+
                         // Reset Tabs
                         var triggerFirstTabEl = document.querySelector('#assignmentDetailTabs button[data-bs-target="#general-tab-pane"]')
                         bootstrap.Tab.getInstance(triggerFirstTabEl)?.show() || new bootstrap.Tab(triggerFirstTabEl).show();
@@ -371,6 +603,7 @@
                             data: { assignmentId: info.event.id },
                             success: function(response) {
                                 if (response && response.success && response.data) {
+                                    if(currentReportData.id === info.event.id) currentReportData.evaluation = response.data; // Capture for report
                                     var d = response.data;
                                     var html = '<div class="container-fluid px-0">';
 
@@ -701,15 +934,20 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-0">
-                 <!-- Tabs -->
-                <ul class="nav nav-tabs px-3 pt-3" id="assignmentDetailTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general-tab-pane" type="button" role="tab" aria-controls="general-tab-pane" aria-selected="true">General</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="evaluation-tab" data-bs-toggle="tab" data-bs-target="#evaluation-tab-pane" type="button" role="tab" aria-controls="evaluation-tab-pane" aria-selected="false">Ejecución y Evaluación</button>
-                    </li>
-                </ul>
+                 <!-- Tabs and Actions -->
+                <div class="d-flex justify-content-between align-items-end px-3 pt-3 border-bottom bg-light">
+                    <ul class="nav nav-tabs border-bottom-0" id="assignmentDetailTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general-tab-pane" type="button" role="tab" aria-controls="general-tab-pane" aria-selected="true">General</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="evaluation-tab" data-bs-toggle="tab" data-bs-target="#evaluation-tab-pane" type="button" role="tab" aria-controls="evaluation-tab-pane" aria-selected="false">Ejecución y Evaluación</button>
+                        </li>
+                    </ul>
+                    <button type="button" class="btn btn-sm btn-danger mb-1 shadow-sm" id="btnDownloadReport">
+                        <i class="fas fa-file-pdf me-2"></i>Descargar Informe
+                    </button>
+                </div>
                 <div class="tab-content p-3" id="assignmentDetailTabContent">
                     <div class="tab-pane fade show active" id="general-tab-pane" role="tabpanel" aria-labelledby="general-tab" tabindex="0">
                         <div id="assignment-general-content"></div>
