@@ -492,14 +492,24 @@
         });
 
         function loadRequirements() {
-            const start = document.getElementById('startDate').value;
-            const end = document.getElementById('endDate').value;
+            const startDateInput = document.getElementById('startDate').value;
+            const endDateInput = document.getElementById('endDate').value;
             const container = document.getElementById('notesContainer');
 
-            if (!start || !end) {
+            if (!startDateInput || !endDateInput) {
                 Swal.fire('Atención', 'Seleccione un rango de fechas válido', 'warning');
                 return;
             }
+
+            // Create Date objects relative to the user's local time
+            // Start of the first day
+            const startDate = new Date(`${startDateInput}T00:00:00`);
+            // End of the last day (23:59:59) to cover the full day
+            const endDate = new Date(`${endDateInput}T23:59:59`);
+
+            // Convert to ISO format (UTC) to send to server
+            const startIso = startDate.toISOString();
+            const endIso = endDate.toISOString();
 
             // Show Spinner
             container.innerHTML = `
@@ -509,7 +519,7 @@
                 </div>`;
 
             // Fetch Data
-            fetch(`/TakenRequirements/GetByDateAll?start=${start}&end=${end}`)
+            fetch(`/TakenRequirements/GetByDateAll?start=${encodeURIComponent(startIso)}&end=${encodeURIComponent(endIso)}`)
                 .then(response => {
                     if (!response.ok) throw new Error('Error en la petición');
                     return response.json();
