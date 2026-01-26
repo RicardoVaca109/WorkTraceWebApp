@@ -31,7 +31,10 @@ public class TakenRequirementApiService : BaseApiService, ITakenRequirementApiSe
 
     public async Task<List<TakenRequirementUserAndClientResponse>?> GetByDateAllAsync(DateTime start, DateTime end)
     {
-        var response = await _client.GetAsync($"{_controller}/GetByDateAll?start={start:yyyy-MM-dd}&end={end:yyyy-MM-dd}");
+        // CAMBIO: Usamos "yyyy-MM-ddTHH:mm:ss" para enviar la fecha CON la hora exacta
+        var url = $"{_controller}/GetByDateAll?start={start:yyyy-MM-ddTHH:mm:ss}&end={end:yyyy-MM-ddTHH:mm:ss}";
+        
+        var response = await _client.GetAsync(url);
         return await ReadResponse<List<TakenRequirementUserAndClientResponse>>(response);
     }
 }
