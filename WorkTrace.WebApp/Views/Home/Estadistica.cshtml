@@ -798,8 +798,12 @@
                         answerType: parseInt(row.querySelector('.q-type').value)
                     };
                     
-                    if (isEditing && qId && qId.trim() !== '') {
-                        question.id = qId;
+                    if (isEditing) {
+                        if (qId && qId.trim() !== '') {
+                            question.id = qId;
+                        } else {
+                            question.id = null;
+                        }
                     }
                     questions.push(question);
                 });
