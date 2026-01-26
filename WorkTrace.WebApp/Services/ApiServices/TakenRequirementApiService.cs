@@ -25,11 +25,7 @@ public class TakenRequirementApiService : BaseApiService, ITakenRequirementApiSe
 
     public async Task<TakenRequirementResponse?> UpdateAsync(string id, UpdateTakenRequirementRequest request)
     {
-        var response = await _client.PutAsJsonAsync($"{_controller}/Update", request); // Assuming Update endpoint expects body with Id and uses PUT /Update or /Update/{id}. Prompt said PUT /TakenRequirements/Update.
-        // Prompt said: PUT /TakenRequirements/Update (sending: id, clientId, title, description)
-        // Usually REST is PUT /resource/{id}, but prompt implies the ID is in the body or URL is generic.
-        // Let's assume the prompt "PUT /TakenRequirements/Update" is the URL.
-        
+        var response = await _client.PutAsJsonAsync($"{_controller}/Update/{id}", request);
         return await ReadResponse<TakenRequirementResponse>(response);
     }
 
