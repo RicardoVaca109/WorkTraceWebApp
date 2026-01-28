@@ -311,7 +311,7 @@
                     } else {
                         markers.destination = L.marker(destLatLng, { icon: destinationIcon })
                             .addTo(map)
-                            .bindPopup(`<b>Destino</b><br>${data.client}<br>${data.address}<br>Hora: ${assignedTimeFormatted}`)
+                            .bindPopup(`<b>Destino</b><br>${data.client}<br>${data.address}<br>`)
                             .openPopup();
                     }
                 } else {
