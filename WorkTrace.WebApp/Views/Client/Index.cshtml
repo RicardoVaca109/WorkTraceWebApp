@@ -1,0 +1,243 @@
+@model List<WorkTrace.WebApp.Models.Dtos.Clients.ClientInformationResponse>
+
+@{
+    ViewData["Title"] = "Administración de Clientes";
+}
+
+<!-- Notification Placeholders -->
+<div id="notification-container" class="position-fixed top-0 end-0 p-3" style="z-index: 1055"></div>
+
+<div class="container-fluid py-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">@ViewData["Title"]</h4>
+            <div>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createClientModal">
+                    <i class="fas fa-plus me-2"></i>Crear Nuevo Cliente
+                </button>
+                <a asp-action="Index" asp-controller="Home" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver al Panel Principal
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nombre Completo</th>
+                            <th>Documento</th>
+                            <th>Email</th>
+                            <th>Teléfono</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            @foreach (var client in Model)
+                            {
+                                <tr>
+                                    <td>@client.FullName</td>
+                                    <td>@client.DocumentNumber</td>
+                                    <td>@client.Email</td>
+                                    <td>@client.PhoneNumber</td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-outline-secondary edit-btn" data-id="@client.Id" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-info history-btn" data-id="@client.Id" title="Ver Historial">
+                                            <i class="fas fa-history"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center py-4">No hay clientes para mostrar.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Client Modal -->
+<div class="modal fade" id="createClientModal" tabindex="-1" aria-labelledby="createClientModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="createClientForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createClientModalLabel">Crear Nuevo Cliente</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="create-client-form-container">
+                        @await Html.PartialAsync("_CreateClientForm", new CreateClientRequest())
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Crear Cliente</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Client Modal -->
+<div class="modal fade" id="editClientModal" tabindex="-1" aria-labelledby="editClientModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="editClientForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editClientModalLabel">Editar Cliente</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="edit-client-form-container">
+                        <!-- Content will be loaded via JS -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Client History Modal -->
+<div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="historyModalLabel">Historial de Servicios</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="history-modal-body-content">
+                    <!-- Content will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(function () {
+            function showNotification(message, type) {
+                Swal.fire({
+                    icon: type,
+                    title: type === 'success' ? 'Éxito' : 'Error',
+                    text: message,
+                    confirmButtonColor: '#3085d6'
+                }).then((result) => {
+                    if (type === 'success' && result.isConfirmed) {
+                        location.reload();
+                    }
+                });
+            }
+
+            $("#createClientForm").on("submit", function(e) {
+                e.preventDefault();
+                $.ajax({
+                    url: '@Url.Action("Create", "Client")',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        if (response.success) {
+                            $('#createClientModal').modal('hide');
+                            showNotification(response.message, 'success');
+                        } else {
+                            showNotification(response.message, 'error');
+                        }
+                    },
+                    error: function() {
+                        showNotification('Ocurrió un error al conectar con el servidor.', 'error');
+                    }
+                });
+            });
+
+            $("#editClientForm").on("submit", function(e) {
+                e.preventDefault();
+                var clientId = $(this).data('id');
+                $.ajax({
+                    url: '@Url.Action("Update", "Client")/' + clientId,
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        if (response.success) {
+                            $('#editClientModal').modal('hide');
+                            showNotification(response.message, 'success');
+                        } else {
+                            showNotification(response.message, 'error');
+                        }
+                    },
+                    error: function() {
+                        showNotification('Ocurrió un error al conectar con el servidor.', 'error');
+                    }
+                });
+            });
+
+            // Handle Edit button click
+            $('.edit-btn').on('click', function () {
+                var clientId = $(this).data('id');
+                var modal = $('#editClientModal');
+                var formContainer = $('#edit-client-form-container');
+                
+                formContainer.html('<p class="text-center">Cargando...</p>');
+
+                $.get('@Url.Action("GetById", "Client")?id=' + clientId)
+                    .done(function (data) {
+                        var updateModel = {
+                            FullName: data.fullName,
+                            DocumentNumber: data.documentNumber,
+                            PhoneNumber: data.phoneNumber,
+                            Email: data.email
+                        };
+                        
+                        $('#editClientForm').data('id', clientId);
+
+                        $.get('@Url.Action("GetEditClientForm", "Client")', updateModel, function(response) {
+                           formContainer.html(response);
+                           $.validator.unobtrusive.parse(formContainer);
+                           modal.modal('show');
+                         });
+                    })
+                    .fail(function () {
+                        showNotification('Error al cargar los datos del cliente.', 'danger');
+                    });
+            });
+
+            // Handle History button click
+            $('.history-btn').on('click', function () {
+                var clientId = $(this).data('id');
+                var modal = $('#historyModal');
+                var modalBody = $('#history-modal-body-content');
+
+                modalBody.html('<p class="text-center">Cargando historial...</p>');
+                modal.modal('show');
+
+                $.get('@Url.Action("GetClientHistory", "Client")?id=' + clientId)
+                    .done(function (response) {
+                        modalBody.html(response);
+                    })
+                    .fail(function () {
+                        modalBody.html('<p class="text-danger text-center">Error al cargar el historial del cliente.</p>');
+                    });
+            });
+        });
+    </script>
+}

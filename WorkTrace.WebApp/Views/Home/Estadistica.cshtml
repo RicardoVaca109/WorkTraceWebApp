@@ -1,0 +1,911 @@
+@model WorkTrace.WebApp.Models.ViewModels.DashboardViewModel
+@{
+    ViewData["Title"] = "Panel de Control y Configuración";
+}
+
+<div class="container-fluid py-4">
+    
+    <!-- Tab Navigation & Actions -->
+    <div class="d-flex justify-content-between align-items-center border-bottom mb-4">
+        <ul class="nav nav-tabs border-bottom-0" id="dashboardTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active fw-bold" id="kpi-tab" data-bs-toggle="tab" data-bs-target="#kpi-content" type="button" role="tab" aria-controls="kpi-content" aria-selected="true">
+                    <i class="fas fa-chart-line me-2"></i>Métricas de Desempeño
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold" id="templates-tab" data-bs-toggle="tab" data-bs-target="#templates-content" type="button" role="tab" aria-controls="templates-content" aria-selected="false">
+                    <i class="fas fa-clipboard-list me-2"></i>Gestión de Cuestionarios
+                </button>
+            </li>
+        </ul>
+        <div class="mb-1">
+            <a asp-action="Index" asp-controller="Home" class="btn btn-outline-primary btn-sm fw-bold shadow-sm">
+                <i class="fas fa-home me-2"></i>Volver al Panel Principal
+            </a>
+        </div>
+    </div>
+
+    <div class="tab-content" id="dashboardTabsContent">
+        
+        <!-- TAB 1: KPI Dashboard -->
+        <div class="tab-pane fade show active" id="kpi-content" role="tabpanel" aria-labelledby="kpi-tab">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h4 class="mb-1 text-primary">Reportes de Rendimiento</h4>
+                    <p class="text-muted mb-0">Visualice métricas clave y tendencias por empleado.</p>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header bg-white py-3">
+                    <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-filter me-2"></i>Filtros de Búsqueda</h6>
+                </div>
+                <div class="card-body bg-light">
+                    <form id="dashboardFilterForm" class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label for="userId" class="form-label fw-bold small text-uppercase text-muted">Empleado</label>
+                            <select class="form-select" id="userId" required>
+                                <option value="">-- Seleccione un Empleado --</option>
+                                @if (Model.Users != null)
+                                {
+                                    foreach (var user in Model.Users)
+                                    {
+                                        <option value="@user.Id">@user.FullName (@user.Role)</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="startDate" class="form-label fw-bold small text-uppercase text-muted">Fecha Inicio</label>
+                            <input type="date" class="form-control" id="startDate" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="endDate" class="form-label fw-bold small text-uppercase text-muted">Fecha Fin</label>
+                            <input type="date" class="form-control" id="endDate" required>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary fw-bold">
+                                    <i class="fas fa-search me-2"></i>Generar
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div id="loadingSpinner" class="text-center py-5 d-none">
+                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-2 text-muted">Procesando datos...</p>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div id="dashboardContent" class="d-none">
+                <!-- Summary Cards -->
+                <div class="row g-4 mb-4">
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm h-100 bg-primary text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="card-title text-white-50 text-uppercase small fw-bold mb-1">Total Evaluaciones</h6>
+                                        <h2 class="mb-0 fw-bold" id="totalEvaluations">0</h2>
+                                    </div>
+                                    <div class="icon-circle bg-white bg-opacity-25 rounded-circle p-3">
+                                        <i class="fas fa-clipboard-check fa-lg"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm h-100 bg-success text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="card-title text-white-50 text-uppercase small fw-bold mb-1">Promedio General</h6>
+                                        <h2 class="mb-0 fw-bold" id="globalAverage">0.0</h2>
+                                    </div>
+                                    <div class="icon-circle bg-white bg-opacity-25 rounded-circle p-3">
+                                        <i class="fas fa-star fa-lg"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm h-100">
+                             <div class="card-body d-flex align-items-center">
+                                <div class="me-3">
+                                     <div class="avatar-initials bg-light text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                                        <i class="fas fa-user"></i>
+                                     </div>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1" id="userNameDisplay">-</h5>
+                                    <p class="text-muted mb-0 small">Reporte Generado: <span id="reportDate" class="fw-bold"></span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="row g-4 mb-4">
+                    <div class="col-lg-6">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0 fw-bold text-dark">Radar de Habilidades</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container" style="position: relative; height:400px; width:100%">
+                                    <canvas id="radarChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-header bg-white py-3">
+                                <h6 class="mb-0 fw-bold text-dark">Tendencia por Pregunta (Promedio)</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container" style="position: relative; height:400px; width:100%">
+                                    <canvas id="barChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Details Table -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white py-3">
+                         <h6 class="mb-0 fw-bold text-dark">Detalle de Métricas</h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0" id="metricsTable">
+                                <thead class="table-light text-muted text-uppercase small">
+                                    <tr>
+                                        <th class="ps-4">Pregunta / Indicador</th>
+                                        <th class="text-center">Muestras (N)</th>
+                                        <th class="text-center">Promedio</th>
+                                        <th class="pe-4" style="width: 30%;">Barra de Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Filled via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Empty State -->
+            <div id="emptyState" class="text-center py-5 d-none">
+                <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" alt="No Data" style="width: 150px; opacity: 0.5;" class="mb-3">
+                <h5 class="text-muted">No se encontraron datos</h5>
+                <p class="text-muted mb-0">Intente ajustar los filtros de búsqueda.</p>
+            </div>
+        </div>
+
+        <!-- TAB 2: Form Template Manager -->
+        <div class="tab-pane fade" id="templates-content" role="tabpanel" aria-labelledby="templates-tab">
+             <div class="card shadow-sm border-0">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                    <h4 class="mb-0 text-primary">Mis Plantillas</h4>
+                    <button type="button" class="btn btn-primary" onclick="FormManager.openCreateModal()">
+                        <i class="fas fa-plus me-2"></i>Nueva Plantilla
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle" id="templatesTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Descripción</th>
+                                    <th>Estado</th>
+                                    <th>Preguntas</th>
+                                    <th>Fecha Creación</th>
+                                    <th class="text-end">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.Templates != null && Model.Templates.Any())
+                                {
+                                    foreach (var item in Model.Templates)
+                                    {
+                                        <tr>
+                                            <td class="fw-bold">@item.Name</td>
+                                            <td>@item.Description</td>
+                                            <td>
+                                                @if (item.IsActive)
+                                                {
+                                                    <span class="badge bg-success">Activo</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">Inactivo</span>
+                                                }
+                                            </td>
+                                            <td><span class="badge bg-info text-dark">@item.Questions.Count</span></td>
+                                            <td>@item.CreatedAt.ToShortDateString()</td>
+                                            <td class="text-end">
+                                                <button class="btn btn-sm btn-outline-primary me-1" onclick="FormManager.openEditModal('@item.Id')" title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                @if (item.IsActive)
+                                                {
+                                                    <button class="btn btn-sm btn-outline-danger" onclick="FormManager.toggleStatus('@item.Id', false)" title="Desactivar">
+                                                        <i class="fas fa-ban"></i>
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <button class="btn btn-sm btn-outline-success" onclick="FormManager.toggleStatus('@item.Id', true)" title="Activar">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4 text-muted">
+                                            <i class="fas fa-inbox fa-2x mb-3 d-block"></i>
+                                            No hay plantillas creadas aún.
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Form Template Modal -->
+<div class="modal fade" id="formTemplateModal" tabindex="-1" aria-labelledby="formTemplateModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="formTemplateModalLabel">Nueva Plantilla</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <form id="templateForm">
+                    <input type="hidden" id="templateId" name="id" />
+                    
+                    <!-- Header Section -->
+                    <div class="card mb-4 shadow-sm">
+                        <div class="card-header bg-white">
+                            <h6 class="mb-0 text-primary">Información General</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-8">
+                                    <label for="templateName" class="form-label fw-bold">Nombre de la Plantilla <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="templateName" name="name" required placeholder="Ej. Formulario de Instalación Fibra Óptica">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">Estado</label>
+                                    <div class="form-check form-switch mt-2">
+                                        <input class="form-check-input" type="checkbox" id="templateIsActive" name="isActive" checked>
+                                        <label class="form-check-label" for="templateIsActive">Activo</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label for="templateDescription" class="form-label fw-bold">Descripción <span class="text-danger">*</span></label>
+                                    <textarea class="form-control" id="templateDescription" name="description" rows="2" required placeholder="Breve descripción del propósito de este formulario..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Questions Builder Section -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 text-primary">Constructor de Preguntas</h6>
+                            <button type="button" class="btn btn-sm btn-success" onclick="FormManager.addQuestion()">
+                                <i class="fas fa-plus me-1"></i> Agregar Pregunta
+                            </button>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0" id="questionsTable">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 5%">#</th>
+                                            <th style="width: 25%">Identificador (Key)</th>
+                                            <th style="width: 45%">Texto de la Pregunta</th>
+                                            <th style="width: 20%">Tipo de Respuesta</th>
+                                            <th style="width: 5%" class="text-center"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="questionsContainer">
+                                        <!-- Questions will be injected here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="emptyQuestionsMsg" class="text-center py-5 text-muted">
+                                <i class="fas fa-clipboard-question fa-3x mb-3 text-secondary"></i>
+                                <p>No hay preguntas agregadas. Haga clic en "Agregar Pregunta" para comenzar.</p>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="FormManager.saveTemplate()">
+                    <i class="fas fa-save me-2"></i>Guardar Plantilla
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Question Row Template (Hidden) -->
+<template id="questionRowTemplate">
+    <tr class="question-row">
+        <td class="align-middle text-center row-index fw-bold text-muted"></td>
+        <td>
+            <input type="hidden" class="q-id" value="" />
+            <input type="text" class="form-control form-control-sm q-key" placeholder="Ej. foto_antes" required>
+            <div class="invalid-feedback">Requerido.</div>
+        </td>
+        <td>
+            <input type="text" class="form-control form-control-sm q-text" placeholder="Ej. Tomar foto antes de la instalación" required>
+            <div class="invalid-feedback">Requerido.</div>
+        </td>
+        <td>
+            <select class="form-select form-select-sm q-type">
+                <option value="1">Texto</option>
+                <option value="2">Numérico</option>
+            </select>
+        </td>
+        <td class="text-center align-middle">
+            <button type="button" class="btn btn-link text-danger p-0" onclick="FormManager.removeQuestion(this)" title="Eliminar">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+        </td>
+    </tr>
+</template>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        // ==========================================
+        // SCOPE 1: KPI DASHBOARD MANAGER
+        // ==========================================
+        const DashboardManager = (function() {
+            let radarChartInstance = null;
+            let barChartInstance = null;
+
+            function init() {
+                // Set default dates
+                const date = new Date();
+                const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+                const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+                
+                const startEl = document.getElementById('startDate');
+                const endEl = document.getElementById('endDate');
+                
+                if(startEl && endEl) {
+                    startEl.valueAsDate = firstDay;
+                    endEl.valueAsDate = lastDay;
+                }
+
+                document.getElementById('dashboardFilterForm')?.addEventListener('submit', handleFilterSubmit);
+            }
+
+            async function handleFilterSubmit(e) {
+                e.preventDefault();
+                
+                const userId = document.getElementById('userId').value;
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+
+                if (!userId) {
+                    Swal.fire('Error', 'Por favor seleccione un empleado.', 'warning');
+                    return;
+                }
+
+                // UI Loading
+                toggleLoading(true);
+
+                try {
+                    const response = await fetch(`@Url.Action("GetDashboardData")?userId=${userId}&start=${startDate}&end=${endDate}`);
+                    if (!response.ok) throw new Error('Network error');
+                    
+                    const result = await response.json();
+
+                    if (result.success && result.data) {
+                        renderDashboard(result.data);
+                    } else {
+                        showEmptyState();
+                        Swal.fire('Info', result.message || 'No se pudieron obtener datos.', 'info');
+                    }
+                } catch (error) {
+                    console.error(error);
+                    Swal.fire('Error', 'Ocurrió un error al cargar el dashboard.', 'error');
+                    showEmptyState();
+                } finally {
+                    toggleLoading(false);
+                }
+            }
+
+            function toggleLoading(isLoading) {
+                const spinner = document.getElementById('loadingSpinner');
+                const content = document.getElementById('dashboardContent');
+                const empty = document.getElementById('emptyState');
+
+                if (isLoading) {
+                    spinner?.classList.remove('d-none');
+                    content?.classList.add('d-none');
+                    empty?.classList.add('d-none');
+                } else {
+                    spinner?.classList.add('d-none');
+                }
+            }
+
+            function renderDashboard(data) {
+                if (!data.metrics || data.metrics.length === 0) {
+                    showEmptyState();
+                    return;
+                }
+
+                document.getElementById('dashboardContent').classList.remove('d-none');
+                
+                document.getElementById('totalEvaluations').innerText = data.totalEvaluations;
+                document.getElementById('userNameDisplay').innerText = data.userName;
+                document.getElementById('reportDate').innerText = new Date().toLocaleDateString();
+
+                const totalSum = data.metrics.reduce((acc, curr) => acc + (curr.average * curr.count), 0);
+                const totalCount = data.metrics.reduce((acc, curr) => acc + curr.count, 0);
+                const globalAvg = totalCount > 0 ? (totalSum / totalCount).toFixed(2) : "0.0";
+                document.getElementById('globalAverage').innerText = globalAvg;
+
+                // Pass full text labels
+                const labels = data.metrics.map(m => m.questionText);
+                const values = data.metrics.map(m => m.average);
+
+                renderRadarChart(labels, values);
+                renderBarChart(labels, values);
+                renderTable(data.metrics);
+            }
+
+            function renderRadarChart(labels, data) {
+                const ctx = document.getElementById('radarChart')?.getContext('2d');
+                if(!ctx) return;
+
+                if (radarChartInstance) radarChartInstance.destroy();
+
+                radarChartInstance = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Puntaje Promedio',
+                            data: data,
+                            fill: true,
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            borderColor: 'rgb(54, 162, 235)',
+                            pointBackgroundColor: 'rgb(54, 162, 235)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgb(54, 162, 235)'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        elements: { line: { tension: 0.3 } },
+                        scales: {
+                            r: {
+                                angleLines: { display: true },
+                                suggestedMin: 0,
+                                suggestedMax: 5,
+                                pointLabels: {
+                                    font: { size: 11 },
+                                    callback: function(label) {
+                                        // Wrap long labels into multi-line arrays
+                                        return wrapText(label, 25);
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    title: function(context) {
+                                        // Ensure full label is shown in tooltip
+                                        return context[0].label; 
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function renderBarChart(labels, data) {
+                const ctx = document.getElementById('barChart')?.getContext('2d');
+                if(!ctx) return;
+
+                if (barChartInstance) barChartInstance.destroy();
+
+                const bgColors = data.map(v => {
+                    if(v >= 4.5) return 'rgba(75, 192, 192, 0.7)';
+                    if(v >= 3.0) return 'rgba(255, 205, 86, 0.7)';
+                    return 'rgba(255, 99, 132, 0.7)';
+                });
+
+                barChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Promedio',
+                            data: data,
+                            backgroundColor: bgColors,
+                            borderColor: bgColors.map(c => c.replace('0.7', '1')),
+                            borderWidth: 1,
+                            borderRadius: 5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                suggestedMax: 5
+                            },
+                            x: {
+                                ticks: {
+                                    callback: function(value, index) {
+                                        // Truncate labels on X-axis to keep it clean
+                                        const label = this.getLabelForValue(value);
+                                        return truncateString(label, 15);
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(context) {
+                                        // Show FULL label on hover
+                                        return context[0].label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function renderTable(metrics) {
+                const tbody = document.querySelector('#metricsTable tbody');
+                if(!tbody) return;
+                tbody.innerHTML = '';
+
+                metrics.forEach(m => {
+                    const avg = m.average.toFixed(2);
+                    const pct = (m.average / 5) * 100;
+                    
+                    let colorClass = 'bg-danger';
+                    if(m.average >= 3) colorClass = 'bg-warning';
+                    if(m.average >= 4.5) colorClass = 'bg-success';
+
+                    const row = `
+                        <tr>
+                            <td class="ps-4 fw-bold text-dark">${m.questionText}</td>
+                            <td class="text-center"><span class="badge bg-light text-dark border">${m.count}</span></td>
+                            <td class="text-center fw-bold">${avg}</td>
+                            <td class="pe-4">
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar ${colorClass}" role="progressbar" style="width: ${pct}%"></div>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.insertAdjacentHTML('beforeend', row);
+                });
+            }
+
+            function showEmptyState() {
+                document.getElementById('dashboardContent')?.classList.add('d-none');
+                document.getElementById('emptyState')?.classList.remove('d-none');
+            }
+
+            function truncateString(str, num) {
+                if (str.length <= num) return str;
+                return str.slice(0, num) + '...';
+            }
+
+            function wrapText(str, maxLineLength) {
+                if (str.length <= maxLineLength) return str;
+                
+                const words = str.split(' ');
+                const lines = [];
+                let currentLine = words[0];
+
+                for (let i = 1; i < words.length; i++) {
+                    if (currentLine.length + 1 + words[i].length <= maxLineLength) {
+                        currentLine += ' ' + words[i];
+                    } else {
+                        lines.push(currentLine);
+                        currentLine = words[i];
+                    }
+                }
+                lines.push(currentLine);
+                return lines;
+            }
+
+            return { init };
+        })();
+
+        // ==========================================
+        // SCOPE 2: FORM TEMPLATE MANAGER
+        // ==========================================
+        const FormManager = (function() {
+            let isEditing = false;
+            const AnswerType = { Text: 1, Numeric: 2 };
+
+            function openCreateModal() {
+                isEditing = false;
+                document.getElementById('templateForm').reset();
+                document.getElementById('templateId').value = '';
+                document.getElementById('questionsContainer').innerHTML = '';
+                document.getElementById('formTemplateModalLabel').innerText = 'Nueva Plantilla';
+                document.getElementById('templateIsActive').checked = true;
+                updateQuestionsUI();
+                
+                addQuestion();
+                new bootstrap.Modal(document.getElementById('formTemplateModal')).show();
+            }
+
+            async function openEditModal(id) {
+                isEditing = true;
+                document.getElementById('formTemplateModalLabel').innerText = 'Editar Plantilla';
+                
+                try {
+                    Swal.fire({ title: 'Cargando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                    
+                    const response = await fetch(`@Url.Action("GetById", "FormTemplate")?id=${id}`);
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    
+                    const result = await response.json();
+                    Swal.close();
+
+                    if (result.success) {
+                        const data = result.data;
+                        document.getElementById('templateId').value = data.id || '';
+                        document.getElementById('templateName').value = data.name || '';
+                        document.getElementById('templateDescription').value = data.description || '';
+                        document.getElementById('templateIsActive').checked = data.isActive;
+
+                        const container = document.getElementById('questionsContainer');
+                        container.innerHTML = '';
+
+                        if (data.questions && data.questions.length > 0) {
+                            data.questions.forEach(q => addQuestion(q));
+                        } else {
+                            addQuestion();
+                        }
+                        
+                        new bootstrap.Modal(document.getElementById('formTemplateModal')).show();
+                    } else {
+                        Swal.fire('Error', result.message, 'error');
+                    }
+                } catch (error) {
+                    Swal.close();
+                    console.error(error);
+                    Swal.fire('Error', 'No se pudo cargar la plantilla.', 'error');
+                }
+            }
+
+            function addQuestion(data = null) {
+                const template = document.getElementById('questionRowTemplate');
+                const clone = template.content.cloneNode(true);
+                const container = document.getElementById('questionsContainer');
+                
+                if (data) {
+                    clone.querySelector('.q-id').value = data.id || data.Id || '';
+                    clone.querySelector('.q-key').value = data.questionKey || data.QuestionKey || '';
+                    clone.querySelector('.q-text').value = data.questionText || data.QuestionText || '';
+                    clone.querySelector('.q-type').value = data.answerType || data.AnswerType || 1;
+                }
+
+                container.appendChild(clone);
+                updateQuestionsUI();
+            }
+
+            function removeQuestion(btn) {
+                const row = btn.closest('tr');
+                row.remove();
+                updateQuestionsUI();
+            }
+
+            function updateQuestionsUI() {
+                const rows = document.querySelectorAll('.question-row');
+                const emptyMsg = document.getElementById('emptyQuestionsMsg');
+                
+                if (rows.length === 0) {
+                    emptyMsg.style.display = 'block';
+                } else {
+                    emptyMsg.style.display = 'none';
+                    rows.forEach((row, index) => {
+                        row.querySelector('.row-index').innerText = index + 1;
+                    });
+                }
+            }
+
+            async function saveTemplate() {
+                const form = document.getElementById('templateForm');
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+
+                // Validate Questions
+                const qKeys = document.querySelectorAll('.q-key');
+                const qTexts = document.querySelectorAll('.q-text');
+                let valid = true;
+                
+                qKeys.forEach(input => {
+                    if(!input.value.trim()) { input.classList.add('is-invalid'); valid = false; } 
+                    else { input.classList.remove('is-invalid'); }
+                });
+                qTexts.forEach(input => {
+                    if(!input.value.trim()) { input.classList.add('is-invalid'); valid = false; } 
+                    else { input.classList.remove('is-invalid'); }
+                });
+
+                if (!valid) {
+                    Swal.fire('Atención', 'Por favor complete todos los campos de las preguntas.', 'warning');
+                    return;
+                }
+
+                const id = document.getElementById('templateId').value;
+                const name = document.getElementById('templateName').value;
+                const description = document.getElementById('templateDescription').value;
+                const isActive = document.getElementById('templateIsActive').checked;
+                
+                const questions = [];
+                document.querySelectorAll('.question-row').forEach(row => {
+                    const qId = row.querySelector('.q-id').value;
+                    const question = {
+                        questionKey: row.querySelector('.q-key').value,
+                        questionText: row.querySelector('.q-text').value,
+                        answerType: parseInt(row.querySelector('.q-type').value)
+                    };
+                    
+                    if (isEditing) {
+                        if (qId && qId.trim() !== '') {
+                            question.id = qId;
+                        } else {
+                            question.id = null;
+                        }
+                    }
+                    questions.push(question);
+                });
+
+                try {
+                    Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                    if (isEditing) {
+                        const headerPayload = { name, description, isActive, questions: questions };
+                        
+                        // 1. Update Header
+                        const responseHeader = await fetch(`@Url.Action("Update", "FormTemplate")?id=${id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(headerPayload)
+                        });
+
+                        if (!responseHeader.ok) throw new Error('Error al actualizar encabezado.');
+                        const resultHeader = await responseHeader.json();
+                        
+                        if (!resultHeader.success) throw new Error(resultHeader.message);
+
+                        // 2. Update Questions
+                        const responseQuestions = await fetch(`@Url.Action("UpdateQuestions", "FormTemplate")?id=${id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(questions)
+                        });
+
+                        if (!responseQuestions.ok) throw new Error('Error al actualizar preguntas.');
+                        const resultQuestions = await responseQuestions.json();
+
+                        if (!resultQuestions.success) throw new Error(resultQuestions.message);
+
+                        Swal.fire('Guardado', 'Plantilla actualizada correctamente.', 'success').then(() => location.reload());
+
+                    } else {
+                        const createPayload = { name, description, isActive, questions };
+                        const response = await fetch(`@Url.Action("Create", "FormTemplate")`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(createPayload)
+                        });
+
+                        if (!response.ok) throw new Error('Error al crear plantilla.');
+                        const result = await response.json();
+
+                        if (result.success) {
+                            Swal.fire('Guardado', result.message, 'success').then(() => location.reload());
+                        } else {
+                            throw new Error(result.message);
+                        }
+                    }
+                } catch (error) {
+                    Swal.close();
+                    console.error(error);
+                    Swal.fire('Error', error.message || 'Ocurrió un error inesperado.', 'error');
+                }
+            }
+
+            async function toggleStatus(id, activate) {
+                const action = activate ? 'activar' : 'desactivar';
+                const result = await Swal.fire({
+                    title: `¿${action.charAt(0).toUpperCase() + action.slice(1)} plantilla?`,
+                    text: `¿Está seguro que desea ${action} esta plantilla?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, confirmar',
+                    cancelButtonText: 'Cancelar'
+                });
+
+                if (result.isConfirmed) {
+                    const url = activate 
+                        ? `@Url.Action("Activate", "FormTemplate")?id=${id}` 
+                        : `@Url.Action("Deactivate", "FormTemplate")?id=${id}`;
+
+                    try {
+                        const response = await fetch(url, { method: 'PATCH' });
+                        const resJson = await response.json();
+
+                        if (resJson.success) {
+                            Swal.fire('Éxito', resJson.message, 'success').then(() => location.reload());
+                        } else {
+                            Swal.fire('Error', resJson.message, 'error');
+                        }
+                    } catch (error) {
+                        Swal.fire('Error', 'Error de conexión.', 'error');
+                    }
+                }
+            }
+
+            return {
+                openCreateModal,
+                openEditModal,
+                addQuestion,
+                removeQuestion,
+                saveTemplate,
+                toggleStatus
+            };
+        })();
+
+        // Initialize Scope 1 on Load
+        document.addEventListener('DOMContentLoaded', DashboardManager.init);
+    </script>
+}

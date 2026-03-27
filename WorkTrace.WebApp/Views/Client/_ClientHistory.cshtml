@@ -1,0 +1,66 @@
+@model List<WorkTrace.WebApp.Models.Dtos.ClientHistoryResponse>
+
+@if (Model != null && Model.Any())
+{
+    <div class="accordion" id="clientHistoryAccordion">
+        @foreach (var (item, index) in Model.Select((value, i) => (value, i)))
+        {
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="heading-@index">
+                    <button class="accordion-button @(index == 0 ? "" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@index" aria-expanded="@(index == 0 ? "true" : "false")" aria-controls="collapse-@index">
+                        <div class="d-flex w-100 justify-content-between align-items-center">
+                            <div>
+                                <strong class="me-3">@item.Service</strong>
+                                <span class="text-muted">@item.AssignedDate.ToString("D")</span>
+                            </div>
+                            <span class="badge bg-primary rounded-pill">@item.Status</span>
+                        </div>
+                    </button>
+                </h2>
+                <div id="collapse-@index" class="accordion-collapse collapse @(index == 0 ? "show" : "")" aria-labelledby="heading-@index" data-bs-parent="#clientHistoryAccordion">
+                    <div class="accordion-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-uppercase text-muted">Detalles del Servicio</h6>
+                                <hr class="mt-0">
+                                <p><i class="fas fa-calendar-alt fa-fw me-2 text-primary"></i><strong>Fecha:</strong> @item.AssignedDate.ToString("g")</p>
+                                <p><i class="fas fa-clock fa-fw me-2 text-primary"></i><strong>Check-out:</strong> @(item.CheckOut?.ToString("g") ?? "No registrado")</p>
+                                <p><i class="fas fa-map-marker-alt fa-fw me-2 text-primary"></i><strong>Dirección:</strong> @item.Address</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-uppercase text-muted">Técnicos Asignados</h6>
+                                <hr class="mt-0">
+                                @if (item.Users != null && item.Users.Any())
+                                {
+                                    <ul class="list-group list-group-flush">
+                                        @foreach (var user in item.Users)
+                                        {
+                                            <li class="list-group-item d-flex align-items-center">
+                                                <i class="fas fa-user-circle fa-fw me-2 text-secondary"></i>
+                                                <span>@user</span>
+                                            </li>
+                                        }
+                                    </ul>
+                                }
+                                else
+                                {
+                                    <div class="text-center p-3">
+                                        <i class="fas fa-user-times fa-2x text-muted"></i>
+                                        <p class="mt-2 fst-italic">No hay técnicos asignados.</p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="alert alert-info text-center" role="alert">
+        <i class="fas fa-info-circle me-2"></i>
+        No hay historial de servicios para mostrar para este cliente.
+    </div>
+}
