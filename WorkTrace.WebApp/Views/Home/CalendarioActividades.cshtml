@@ -65,7 +65,7 @@
 
                 doc.setFontSize(16);
                 doc.setTextColor(40);
-                doc.text("TECNIC SOLUTION", 195, 18, { align: 'right' });
+                doc.text("WORK TRACE", 195, 18, { align: 'right' });
                 doc.setFontSize(10);
                 doc.setTextColor(100);
                 doc.text("Informe de Servicio Técnico", 195, 24, { align: 'right' });
@@ -243,7 +243,7 @@
                     doc.text("Generado por WorkTrace System", 15, 290, { align: 'left' });
                 }
 
-                doc.save(`Informe_TecnicSolution_${d.id.substring(0,8)}.pdf`);
+                doc.save(`Informe_WorkTrace_${d.id.substring(0,8)}.pdf`);
             });
 
             function showNotification(message, type, shouldReload) {
